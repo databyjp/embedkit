@@ -2,163 +2,101 @@
 EmbedKit: A unified toolkit for generating vector embeddings.
 """
 
-from abc import ABC, abstractmethod
-from enum import Enum
+from typing import Union, List
+from pathlib import Path
+import numpy as np
+
+from .models import Model
+from .base import EmbeddingError
+from .providers import ColPaliProvider, CohereProvider
+
+
+"""
+EmbedKit: A unified toolkit for generating vector embeddings.
+"""
+
 from typing import Union, List, Optional
 from pathlib import Path
-import logging
-
 import numpy as np
-import torch
-from PIL import Image
 
-logger = logging.getLogger(__name__)
-
-
-class EmbeddingError(Exception):
-    """Base exception for embedding-related errors."""
-    pass
-
-
-class Model(Enum):
-    """Available embedding models."""
-    COLPALI_V1_3 = "colpali-v1.3"
-
-
-class EmbeddingProvider(ABC):
-    """Abstract base class for embedding providers."""
-
-    @abstractmethod
-    def embed_text(self, texts: Union[str, List[str]]) -> np.ndarray:
-        """Generate embeddings for text."""
-        pass
-
-    @abstractmethod
-    def embed_images(self, images: Union[Path, str, List[Union[Path, str]]]) -> np.ndarray:
-        """Generate embeddings for images."""
-        pass
-
-
-class ColPaliProvider(EmbeddingProvider):
-    """ColPali embedding provider for document understanding."""
-
-    def __init__(self, model_name: str = "vidore/colpali-v1.3", device: Optional[str] = None):
-        self.model_name = model_name
-
-        # Auto-detect device
-        if device is None:
-            if torch.cuda.is_available():
-                device = "cuda"
-            elif torch.backends.mps.is_available():
-                device = "mps"
-            else:
-                device = "cpu"
-
-        self.device = device
-        self._model = None
-        self._processor = None
-
-    def _load_model(self):
-        """Lazy load the model."""
-        if self._model is None:
-            try:
-                from colpali_engine.models import ColPali, ColPaliProcessor
-
-                self._model = ColPali.from_pretrained(
-                    self.model_name,
-                    torch_dtype=torch.bfloat16,
-                    device_map=self.device,
-                ).eval()
-
-                self._processor = ColPaliProcessor.from_pretrained(self.model_name)
-                logger.info(f"Loaded ColPali model on {self.device}")
-
-            except ImportError as e:
-                raise EmbeddingError(
-                    "ColPali not installed. Run: pip install colpali-engine"
-                ) from e
-            except Exception as e:
-                raise EmbeddingError(f"Failed to load model: {e}") from e
-
-    def embed_text(self, texts: Union[str, List[str]]) -> np.ndarray:
-        """Generate embeddings for text queries."""
-        self._load_model()
-
-        if isinstance(texts, str):
-            texts = [texts]
-
-        try:
-            processed = self._processor.process_queries(texts).to(self.device)
-
-            with torch.no_grad():
-                embeddings = self._model(**processed)
-
-            return embeddings.cpu().float().numpy()
-
-        except Exception as e:
-            raise EmbeddingError(f"Failed to embed text: {e}") from e
-
-    def embed_images(self, images: Union[Path, str, List[Union[Path, str]]]) -> np.ndarray:
-        """Generate embeddings for images."""
-        self._load_model()
-
-        # Normalize to list of Paths
-        if isinstance(images, (str, Path)):
-            images = [Path(images)]
-        else:
-            images = [Path(img) for img in images]
-
-        try:
-            # Load images
-            pil_images = []
-            for img_path in images:
-                if not img_path.exists():
-                    raise EmbeddingError(f"Image not found: {img_path}")
-
-                with Image.open(img_path) as img:
-                    pil_images.append(img.convert("RGB"))
-
-            # Process
-            processed = self._processor.process_images(pil_images).to(self.device)
-
-            with torch.no_grad():
-                embeddings = self._model(**processed)
-
-            return embeddings.cpu().float().numpy()
-
-        except Exception as e:
-            raise EmbeddingError(f"Failed to embed images: {e}") from e
+from .models import Model
+from .base import EmbeddingError
+from .providers import ColPaliProvider, CohereProvider
 
 
 class EmbedKit:
     """Main interface for generating embeddings."""
 
-    def __init__(self):
-        self._providers = {}
+    def __init__(self, provider_instance):
+        """
+        Initialize EmbedKit with a provider instance.
 
-    def _get_provider(self, model: Union[str, Model]) -> EmbeddingProvider:
-        """Get provider for model."""
-        if isinstance(model, Model):
-            model_name = model.value
+        Args:
+            provider_instance: An initialized provider (use class methods to create)
+        """
+        self._provider = provider_instance
+
+    @classmethod
+    def colpali(cls, model: Model = Model.COLPALI_V1_3, device: Optional[str] = None):
+        """
+        Create EmbedKit instance with ColPali provider.
+
+        Args:
+            model: ColPali model enum
+            device: Device to run on ('cuda', 'mps', 'cpu', or None for auto-detect)
+        """
+
+        if model == Model.COLPALI_V1_3:
+            model_name = "vidore/colpali-v1.3"
         else:
-            model_name = model
+            raise ValueError(f"Unsupported ColPali model: {model}")
 
-        if model_name == "colpali-v1.3":
-            if model_name not in self._providers:
-                self._providers[model_name] = ColPaliProvider()
-            return self._providers[model_name]
-        else:
-            raise EmbeddingError(f"Unknown model: {model_name}")
+        provider = ColPaliProvider(model_name=model_name, device=device)
+        return cls(provider)
 
-    def embed_text(self, texts: Union[str, List[str]], model: Union[str, Model] = Model.COLPALI_V1_3) -> np.ndarray:
-        """Generate text embeddings."""
-        provider = self._get_provider(model)
-        return provider.embed_text(texts)
+    @classmethod
+    def cohere(cls, api_key: str, model: Model = Model.COHERE_V4_0):
+        """
+        Create EmbedKit instance with Cohere provider.
 
-    def embed_images(self, images: Union[Path, str, List[Union[Path, str]]], model: Union[str, Model] = Model.COLPALI_V1_3) -> np.ndarray:
-        """Generate image embeddings."""
-        provider = self._get_provider(model)
-        return provider.embed_images(images)
+        Args:
+            api_key: Cohere API key
+            model: Cohere model enum
+        """
+        provider = CohereProvider(api_key=api_key, model_name=model.value)
+        return cls(provider)
+
+    # Future class methods:
+    # @classmethod
+    # def openai(cls, api_key: str, model_name: str = "text-embedding-3-large"):
+    #     """Create EmbedKit instance with OpenAI provider."""
+    #     provider = OpenAIProvider(api_key=api_key, model_name=model_name)
+    #     return cls(provider)
+    #
+    # @classmethod
+    # def huggingface(cls, model_name: str = "all-MiniLM-L6-v2", device: Optional[str] = None):
+    #     """Create EmbedKit instance with HuggingFace provider."""
+    #     provider = HuggingFaceProvider(model_name=model_name, device=device)
+    #     return cls(provider)
+
+    def embed_text(self, texts: Union[str, List[str]]) -> np.ndarray:
+        """Generate text embeddings using the configured provider."""
+
+        # It should always return an array of shape (N, E) where N is the number of texts, and E is the embedding. E may be multi-dimensional.
+        return self._provider.embed_text(texts)
+
+    def embed_image(
+        self, images: Union[Path, str, List[Union[Path, str]]]
+    ) -> np.ndarray:
+        """Generate image embeddings using the configured provider."""
+
+        # It should always return an array of shape (N, E) where N is the number of texts, and E is the embedding. E may be multi-dimensional.
+        return self._provider.embed_image(images)
+
+    @property
+    def provider_info(self) -> str:
+        """Get information about the current provider."""
+        return f"{self._provider.__class__.__name__}"
 
 
 # Main exports
