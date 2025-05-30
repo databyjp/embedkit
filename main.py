@@ -1,3 +1,4 @@
+# ./main.py
 from embedkit import EmbedKit
 from embedkit.models import Model
 from pathlib import Path

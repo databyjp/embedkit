@@ -1,3 +1,4 @@
+# ./src/embedkit/__init__.py
 """
 EmbedKit: A unified toolkit for generating vector embeddings.
 """

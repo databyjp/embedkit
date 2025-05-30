@@ -1,3 +1,4 @@
+# ./src/embedkit/providers/colpali.py
 """ColPali embedding provider."""
 
 from typing import Union, List, Optional

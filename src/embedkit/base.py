@@ -1,3 +1,4 @@
+# ./src/embedkit/base.py
 """Base classes for EmbedKit."""
 
 from abc import ABC, abstractmethod

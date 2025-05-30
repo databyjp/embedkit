@@ -1,3 +1,4 @@
+# ./src/embedkit/providers/cohere.py
 """Cohere embedding provider."""
 
 from typing import Union, List

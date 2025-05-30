@@ -1,3 +1,4 @@
+# ./src/embedkit/models.py
 """Model definitions and enum for EmbedKit."""
 
 from enum import Enum

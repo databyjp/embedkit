@@ -1,3 +1,4 @@
+# ./src/embedkit/providers/__init__.py
 """Embedding providers for EmbedKit."""
 
 from .colpali import ColPaliProvider
