@@ -9,12 +9,19 @@ from enum import Enum
 from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResult
 
 
+class CohereInputType(Enum):
+    """Enum for Cohere input types."""
+    SEARCH_DOCUMENT = "search_document"
+    SEARCH_QUERY = "search_query"
+
+
 class CohereProvider(EmbeddingProvider):
     """Cohere embedding provider for text embeddings."""
 
-    def __init__(self, api_key: str, model_name: str):
+    def __init__(self, api_key: str, model_name: str, text_input_type: CohereInputType = CohereInputType.SEARCH_DOCUMENT):
         self.api_key = api_key
         self.model_name = model_name
+        self.input_type = text_input_type
         self._client = None
         self.provider_name = "Cohere"
 
@@ -33,10 +40,10 @@ class CohereProvider(EmbeddingProvider):
                 raise EmbeddingError(f"Failed to initialize Cohere client: {e}") from e
         return self._client
 
-    def _embed_text(
+    def embed_text(
         self,
         texts: Union[str, List[str]],
-        input_type: str,
+        **kwargs
     ) -> EmbeddingResult:
         """Generate text embeddings using the Cohere API."""
         client = self._get_client()
@@ -48,7 +55,7 @@ class CohereProvider(EmbeddingProvider):
             response = client.embed(
                 texts=texts,
                 model=self.model_name,
-                input_type="search_query",
+                input_type=self.input_type.value,
                 embedding_types=["float"],
             )
 
@@ -56,30 +63,16 @@ class CohereProvider(EmbeddingProvider):
                 embeddings=np.array(response.embeddings.float_),
                 model_name=self.model_name,
                 model_provider=self.provider_name,
-                input_type=input_type,
+                input_type=self.input_type.value,
             )
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed text with Cohere: {e}") from e
 
-    def embed_document(
-        self,
-        texts: Union[str, List[str]],
-    ) -> EmbeddingResult:
-        """Generate document text embeddings using the Cohere API."""
-        return self._embed_text(texts, input_type="search_document")
-
-    def embed_query(
-        self,
-        texts: Union[str, List[str]],
-    ) -> EmbeddingResult:
-        """Generate query text embeddings using the Cohere API."""
-        return self._embed_text(texts, input_type="search_query")
-
     def embed_image(
         self,
         images: Union[Path, str, List[Union[Path, str]]],
-    ) -> np.ndarray:
+    ) -> EmbeddingResult:
         """Generate embeddings for images using Cohere API."""
         client = self._get_client()
         input_type = "image"
@@ -123,7 +116,7 @@ class CohereProvider(EmbeddingProvider):
 
             response = client.embed(
                 model=self.model_name,
-                input_type=input_type,
+                input_type="image",
                 images=b64_images,
                 embedding_types=["float"],
             )

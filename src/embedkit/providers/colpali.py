@@ -55,11 +55,8 @@ class ColPaliProvider(EmbeddingProvider):
             except Exception as e:
                 raise EmbeddingError(f"Failed to load model: {e}") from e
 
-    def embed_query(self, texts: Union[str, List[str]]) -> np.ndarray:
-        """Generate embeddings for text inputs.
-
-        For ColPali, this is used for both queries and documents.
-        """
+    def embed_text(self, texts: Union[str, List[str]]) -> np.ndarray:
+        """Generate embeddings for text inputs."""
         self._load_model()
 
         if isinstance(texts, str):
@@ -80,13 +77,6 @@ class ColPaliProvider(EmbeddingProvider):
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed text: {e}") from e
-
-    def embed_document(self, texts: Union[str, List[str]]) -> np.ndarray:
-        """Generate embeddings for text inputs.
-
-        For ColPali, this is used for both queries and documents.
-        """
-        return self.embed_query(texts)
 
     def embed_image(
         self, images: Union[Path, str, List[Union[Path, str]]]

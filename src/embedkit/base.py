@@ -2,10 +2,11 @@
 """Base classes for EmbedKit."""
 
 from abc import ABC, abstractmethod
-from typing import Union, List, Literal
+from typing import Union, List, Literal, Optional, overload
 from pathlib import Path
 import numpy as np
 from dataclasses import dataclass
+from src.embedkit.providers.cohere import CohereInputType
 
 
 @dataclass
@@ -13,7 +14,7 @@ class EmbeddingResult:
     embeddings: np.ndarray
     model_name: str
     model_provider: str
-    input_type: Literal["text", "image"]
+    input_type: str
 
     @property
     def shape(self) -> tuple:
@@ -24,24 +25,22 @@ class EmbeddingProvider(ABC):
     """Abstract base class for embedding providers."""
 
     @abstractmethod
-    def embed_document(self, texts: Union[str, List[str]]) -> EmbeddingResult:
-        """Generate embeddings for text document objects."""
-        pass
-
-    @abstractmethod
-    def embed_query(self, texts: Union[str, List[str]]) -> EmbeddingResult:
-        """Generate embeddings for text query objects."""
+    def embed_text(
+        self,
+        texts: Union[str, List[str]],
+        **kwargs
+    ) -> EmbeddingResult:
+        """Generate document text embeddings using the configured provider."""
         pass
 
     @abstractmethod
     def embed_image(
         self, images: Union[Path, str, List[Union[Path, str]]]
     ) -> EmbeddingResult:
-        """Generate embeddings for images."""
+        """Generate image embeddings using the configured provider."""
         pass
 
 
 class EmbeddingError(Exception):
     """Base exception for embedding-related errors."""
-
     pass

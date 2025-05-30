@@ -1,6 +1,7 @@
 # ./main.py
 from embedkit import EmbedKit
 from embedkit.models import Model
+from embedkit.providers.cohere import CohereInputType
 from pathlib import Path
 import os
 
@@ -35,11 +36,7 @@ sample_image = get_sample_image()
 
 kit = EmbedKit.colpali(model=Model.COLPALI_V1_3)
 
-embeddings = kit.embed_document("Hello world")
-assert embeddings.shape[0] == 1
-assert len(embeddings.shape) == 3
-
-embeddings = kit.embed_query("Hello world")
+embeddings = kit.embed_text("Hello world")
 assert embeddings.shape[0] == 1
 assert len(embeddings.shape) == 3
 
@@ -48,13 +45,15 @@ assert embeddings.shape[0] == 1
 assert len(embeddings.shape) == 3
 
 
-kit = EmbedKit.cohere(model=Model.COHERE_V4_0, api_key=os.getenv("COHERE_API_KEY"))
+kit = EmbedKit.cohere(model=Model.COHERE_V4_0, api_key=os.getenv("COHERE_API_KEY"), text_input_type=CohereInputType.SEARCH_QUERY)
 
-embeddings = kit.embed_document("Hello world")
+embeddings = kit.embed_text("Hello world")
 assert embeddings.shape[0] == 1
 assert len(embeddings.shape) == 2
 
-embeddings = kit.embed_query("Hello world")
+kit = EmbedKit.cohere(model=Model.COHERE_V4_0, api_key=os.getenv("COHERE_API_KEY"), text_input_type=CohereInputType.SEARCH_DOCUMENT)
+
+embeddings = kit.embed_text("Hello world")
 assert embeddings.shape[0] == 1
 assert len(embeddings.shape) == 2
 

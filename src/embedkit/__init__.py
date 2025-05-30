@@ -10,6 +10,7 @@ import numpy as np
 from .models import Model
 from .base import EmbeddingError, EmbeddingResult
 from .providers import ColPaliProvider, CohereProvider
+from .providers.cohere import CohereInputType
 
 
 class EmbedKit:
@@ -33,7 +34,6 @@ class EmbedKit:
             model: ColPali model enum
             device: Device to run on ('cuda', 'mps', 'cpu', or None for auto-detect)
         """
-
         if model == Model.COLPALI_V1_3:
             model_name = "vidore/colpali-v1.3"
         else:
@@ -43,15 +43,25 @@ class EmbedKit:
         return cls(provider)
 
     @classmethod
-    def cohere(cls, api_key: str, model: Model = Model.COHERE_V4_0):
+    def cohere(
+        cls,
+        api_key: str,
+        model: Model = Model.COHERE_V4_0,
+        text_input_type: CohereInputType = CohereInputType.SEARCH_DOCUMENT
+    ):
         """
         Create EmbedKit instance with Cohere provider.
 
         Args:
             api_key: Cohere API key
             model: Cohere model enum
+            input_type: Type of input for embedding (search_document or search_query)
         """
-        provider = CohereProvider(api_key=api_key, model_name=model.value)
+        provider = CohereProvider(
+            api_key=api_key,
+            model_name=model.value,
+            text_input_type=text_input_type
+        )
         return cls(provider)
 
     # Future class methods:
@@ -67,24 +77,26 @@ class EmbedKit:
     #     provider = HuggingFaceProvider(model_name=model_name, device=device)
     #     return cls(provider)
 
-    def embed_document(self, texts: Union[str, List[str]]) -> EmbeddingResult:
-        """Generate document text embeddings using the configured provider."""
+    def embed_text(
+        self,
+        texts: Union[str, List[str]],
+        **kwargs
+    ) -> EmbeddingResult:
+        """Generate document text embeddings using the configured provider.
 
-        # It should always return an array of shape (N, E) where N is the number of texts, and E is the embedding. E may be multi-dimensional.
-        return self._provider.embed_document(texts)
+        Args:
+            texts: Text or list of texts to embed
+            **kwargs: Additional provider-specific arguments
 
-    def embed_query(self, texts: Union[str, List[str]]) -> EmbeddingResult:
-        """Generate query text embeddings using the configured provider."""
-
-        # It should always return an array of shape (N, E) where N is the number of texts, and E is the embedding. E may be multi-dimensional.
-        return self._provider.embed_query(texts)
+        Returns:
+            EmbeddingResult containing the embeddings
+        """
+        return self._provider.embed_text(texts, **kwargs)
 
     def embed_image(
         self, images: Union[Path, str, List[Union[Path, str]]]
     ) -> EmbeddingResult:
         """Generate image embeddings using the configured provider."""
-
-        # It should always return an array of shape (N, E) where N is the number of texts, and E is the embedding. E may be multi-dimensional.
         return self._provider.embed_image(images)
 
     @property
