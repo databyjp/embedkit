@@ -4,12 +4,11 @@
 from typing import Union, List, Optional
 from pathlib import Path
 import logging
-
 import numpy as np
 import torch
 from PIL import Image
 
-from ..base import EmbeddingProvider, EmbeddingError
+from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResult
 
 logger = logging.getLogger(__name__)
 
@@ -17,10 +16,9 @@ logger = logging.getLogger(__name__)
 class ColPaliProvider(EmbeddingProvider):
     """ColPali embedding provider for document understanding."""
 
-    def __init__(
-        self, model_name: str = "vidore/colpali-v1.3", device: Optional[str] = None
-    ):
+    def __init__(self, model_name: str, device: Optional[str] = None):
         self.model_name = model_name
+        self.provider_name = "ColPali"
 
         # Auto-detect device
         if device is None:
@@ -57,8 +55,11 @@ class ColPaliProvider(EmbeddingProvider):
             except Exception as e:
                 raise EmbeddingError(f"Failed to load model: {e}") from e
 
-    def embed_text(self, texts: Union[str, List[str]]) -> np.ndarray:
-        """Generate embeddings for text queries."""
+    def embed_query(self, texts: Union[str, List[str]]) -> np.ndarray:
+        """Generate embeddings for text inputs.
+
+        For ColPali, this is used for both queries and documents.
+        """
         self._load_model()
 
         if isinstance(texts, str):
@@ -70,10 +71,22 @@ class ColPaliProvider(EmbeddingProvider):
             with torch.no_grad():
                 embeddings = self._model(**processed)
 
-            return embeddings.cpu().float().numpy()
+            return EmbeddingResult(
+                embeddings=embeddings.cpu().float().numpy(),
+                model_name=self.model_name,
+                model_provider=self.provider_name,
+                input_type="text",
+            )
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed text: {e}") from e
+
+    def embed_document(self, texts: Union[str, List[str]]) -> np.ndarray:
+        """Generate embeddings for text inputs.
+
+        For ColPali, this is used for both queries and documents.
+        """
+        return self.embed_query(texts)
 
     def embed_image(
         self, images: Union[Path, str, List[Union[Path, str]]]
@@ -81,14 +94,12 @@ class ColPaliProvider(EmbeddingProvider):
         """Generate embeddings for images."""
         self._load_model()
 
-        # Normalize to list of Paths
         if isinstance(images, (str, Path)):
             images = [Path(images)]
         else:
             images = [Path(img) for img in images]
 
         try:
-            # Load images
             pil_images = []
             for img_path in images:
                 if not img_path.exists():
@@ -97,13 +108,17 @@ class ColPaliProvider(EmbeddingProvider):
                 with Image.open(img_path) as img:
                     pil_images.append(img.convert("RGB"))
 
-            # Process
             processed = self._processor.process_images(pil_images).to(self.device)
 
             with torch.no_grad():
                 embeddings = self._model(**processed)
 
-            return embeddings.cpu().float().numpy()
+            return EmbeddingResult(
+                embeddings=embeddings.cpu().float().numpy(),
+                model_name=self.model_name,
+                model_provider=self.provider_name,
+                input_type="image",
+            )
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed images: {e}") from e

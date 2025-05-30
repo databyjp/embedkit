@@ -10,7 +10,12 @@ def get_online_image(url: str) -> Path:
     import requests
     from tempfile import NamedTemporaryFile
 
-    response = requests.get(url)
+    # Add User-Agent header to comply with Wikipedia's policy
+    headers = {
+        'User-Agent': 'EmbedKit-Example/1.0'
+    }
+
+    response = requests.get(url, headers=headers)
     response.raise_for_status()
 
     temp_file = NamedTemporaryFile(delete=False, suffix=".png")
@@ -26,23 +31,33 @@ def get_sample_image() -> Path:
     return get_online_image(url)
 
 
-# kit = EmbedKit.colpali(model=Model.COLPALI_V1_3)
+sample_image = get_sample_image()
 
-# embeddings = kit.embed_text("Hello world")
-# assert embeddings.shape[0] == 1
-# assert len(embeddings.shape) == 3
+kit = EmbedKit.colpali(model=Model.COLPALI_V1_3)
 
-# embeddings = kit.embed_image(get_sample_image())
-# assert embeddings.shape[0] == 1
-# assert len(embeddings.shape) == 3
+embeddings = kit.embed_document("Hello world")
+assert embeddings.shape[0] == 1
+assert len(embeddings.shape) == 3
+
+embeddings = kit.embed_query("Hello world")
+assert embeddings.shape[0] == 1
+assert len(embeddings.shape) == 3
+
+embeddings = kit.embed_image(sample_image)
+assert embeddings.shape[0] == 1
+assert len(embeddings.shape) == 3
 
 
 kit = EmbedKit.cohere(model=Model.COHERE_V4_0, api_key=os.getenv("COHERE_API_KEY"))
 
-embeddings = kit.embed_text("Hello world")
+embeddings = kit.embed_document("Hello world")
 assert embeddings.shape[0] == 1
 assert len(embeddings.shape) == 2
 
-embeddings = kit.embed_image(get_sample_image())
+embeddings = kit.embed_query("Hello world")
+assert embeddings.shape[0] == 1
+assert len(embeddings.shape) == 2
+
+embeddings = kit.embed_image(sample_image)
 assert embeddings.shape[0] == 1
 assert len(embeddings.shape) == 2

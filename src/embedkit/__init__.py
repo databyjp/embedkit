@@ -3,25 +3,12 @@
 EmbedKit: A unified toolkit for generating vector embeddings.
 """
 
-from typing import Union, List
-from pathlib import Path
-import numpy as np
-
-from .models import Model
-from .base import EmbeddingError
-from .providers import ColPaliProvider, CohereProvider
-
-
-"""
-EmbedKit: A unified toolkit for generating vector embeddings.
-"""
-
 from typing import Union, List, Optional
 from pathlib import Path
 import numpy as np
 
 from .models import Model
-from .base import EmbeddingError
+from .base import EmbeddingError, EmbeddingResult
 from .providers import ColPaliProvider, CohereProvider
 
 
@@ -80,15 +67,21 @@ class EmbedKit:
     #     provider = HuggingFaceProvider(model_name=model_name, device=device)
     #     return cls(provider)
 
-    def embed_text(self, texts: Union[str, List[str]]) -> np.ndarray:
-        """Generate text embeddings using the configured provider."""
+    def embed_document(self, texts: Union[str, List[str]]) -> EmbeddingResult:
+        """Generate document text embeddings using the configured provider."""
 
         # It should always return an array of shape (N, E) where N is the number of texts, and E is the embedding. E may be multi-dimensional.
-        return self._provider.embed_text(texts)
+        return self._provider.embed_document(texts)
+
+    def embed_query(self, texts: Union[str, List[str]]) -> EmbeddingResult:
+        """Generate query text embeddings using the configured provider."""
+
+        # It should always return an array of shape (N, E) where N is the number of texts, and E is the embedding. E may be multi-dimensional.
+        return self._provider.embed_query(texts)
 
     def embed_image(
         self, images: Union[Path, str, List[Union[Path, str]]]
-    ) -> np.ndarray:
+    ) -> EmbeddingResult:
         """Generate image embeddings using the configured provider."""
 
         # It should always return an array of shape (N, E) where N is the number of texts, and E is the embedding. E may be multi-dimensional.

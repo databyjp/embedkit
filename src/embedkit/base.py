@@ -2,23 +2,41 @@
 """Base classes for EmbedKit."""
 
 from abc import ABC, abstractmethod
-from typing import Union, List
+from typing import Union, List, Literal
 from pathlib import Path
 import numpy as np
+from dataclasses import dataclass
+
+
+@dataclass
+class EmbeddingResult:
+    embeddings: np.ndarray
+    model_name: str
+    model_provider: str
+    input_type: Literal["text", "image"]
+
+    @property
+    def shape(self) -> tuple:
+        return self.embeddings.shape
 
 
 class EmbeddingProvider(ABC):
     """Abstract base class for embedding providers."""
 
     @abstractmethod
-    def embed_text(self, texts: Union[str, List[str]]) -> np.ndarray:
-        """Generate embeddings for text objects."""
+    def embed_document(self, texts: Union[str, List[str]]) -> EmbeddingResult:
+        """Generate embeddings for text document objects."""
+        pass
+
+    @abstractmethod
+    def embed_query(self, texts: Union[str, List[str]]) -> EmbeddingResult:
+        """Generate embeddings for text query objects."""
         pass
 
     @abstractmethod
     def embed_image(
         self, images: Union[Path, str, List[Union[Path, str]]]
-    ) -> np.ndarray:
+    ) -> EmbeddingResult:
         """Generate embeddings for images."""
         pass
 
