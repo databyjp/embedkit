@@ -2,11 +2,10 @@
 """Base classes for EmbedKit."""
 
 from abc import ABC, abstractmethod
-from typing import Union, List, Literal, Optional, overload
+from typing import Union, List
 from pathlib import Path
 import numpy as np
 from dataclasses import dataclass
-from src.embedkit.providers.cohere import CohereInputType
 
 
 @dataclass
@@ -25,11 +24,7 @@ class EmbeddingProvider(ABC):
     """Abstract base class for embedding providers."""
 
     @abstractmethod
-    def embed_text(
-        self,
-        texts: Union[str, List[str]],
-        **kwargs
-    ) -> EmbeddingResult:
+    def embed_text(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResult:
         """Generate document text embeddings using the configured provider."""
         pass
 
@@ -43,4 +38,5 @@ class EmbeddingProvider(ABC):
 
 class EmbeddingError(Exception):
     """Base exception for embedding-related errors."""
+
     pass

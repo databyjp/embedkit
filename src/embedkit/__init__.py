@@ -47,7 +47,7 @@ class EmbedKit:
         cls,
         api_key: str,
         model: Model = Model.COHERE_V4_0,
-        text_input_type: CohereInputType = CohereInputType.SEARCH_DOCUMENT
+        text_input_type: CohereInputType = CohereInputType.SEARCH_DOCUMENT,
     ):
         """
         Create EmbedKit instance with Cohere provider.
@@ -57,10 +57,11 @@ class EmbedKit:
             model: Cohere model enum
             input_type: Type of input for embedding (search_document or search_query)
         """
+        if not api_key:
+            raise ValueError("API key is required")
+
         provider = CohereProvider(
-            api_key=api_key,
-            model_name=model.value,
-            text_input_type=text_input_type
+            api_key=api_key, model_name=model.value, text_input_type=text_input_type
         )
         return cls(provider)
 
@@ -77,11 +78,7 @@ class EmbedKit:
     #     provider = HuggingFaceProvider(model_name=model_name, device=device)
     #     return cls(provider)
 
-    def embed_text(
-        self,
-        texts: Union[str, List[str]],
-        **kwargs
-    ) -> EmbeddingResult:
+    def embed_text(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResult:
         """Generate document text embeddings using the configured provider.
 
         Args:

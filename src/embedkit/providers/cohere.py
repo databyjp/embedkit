@@ -1,7 +1,7 @@
 # ./src/embedkit/providers/cohere.py
 """Cohere embedding provider."""
 
-from typing import Union, List, overload
+from typing import Union, List
 from pathlib import Path
 import numpy as np
 from enum import Enum
@@ -11,6 +11,7 @@ from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResult
 
 class CohereInputType(Enum):
     """Enum for Cohere input types."""
+
     SEARCH_DOCUMENT = "search_document"
     SEARCH_QUERY = "search_query"
 
@@ -18,7 +19,12 @@ class CohereInputType(Enum):
 class CohereProvider(EmbeddingProvider):
     """Cohere embedding provider for text embeddings."""
 
-    def __init__(self, api_key: str, model_name: str, text_input_type: CohereInputType = CohereInputType.SEARCH_DOCUMENT):
+    def __init__(
+        self,
+        api_key: str,
+        model_name: str,
+        text_input_type: CohereInputType = CohereInputType.SEARCH_DOCUMENT,
+    ):
         self.api_key = api_key
         self.model_name = model_name
         self.input_type = text_input_type
@@ -40,11 +46,7 @@ class CohereProvider(EmbeddingProvider):
                 raise EmbeddingError(f"Failed to initialize Cohere client: {e}") from e
         return self._client
 
-    def embed_text(
-        self,
-        texts: Union[str, List[str]],
-        **kwargs
-    ) -> EmbeddingResult:
+    def embed_text(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResult:
         """Generate text embeddings using the Cohere API."""
         client = self._get_client()
 

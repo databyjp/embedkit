@@ -12,9 +12,7 @@ def get_online_image(url: str) -> Path:
     from tempfile import NamedTemporaryFile
 
     # Add User-Agent header to comply with Wikipedia's policy
-    headers = {
-        'User-Agent': 'EmbedKit-Example/1.0'
-    }
+    headers = {"User-Agent": "EmbedKit-Example/1.0"}
 
     response = requests.get(url, headers=headers)
     response.raise_for_status()
@@ -45,13 +43,21 @@ assert embeddings.shape[0] == 1
 assert len(embeddings.shape) == 3
 
 
-kit = EmbedKit.cohere(model=Model.COHERE_V4_0, api_key=os.getenv("COHERE_API_KEY"), text_input_type=CohereInputType.SEARCH_QUERY)
+kit = EmbedKit.cohere(
+    model=Model.COHERE_V4_0,
+    api_key=os.getenv("COHERE_API_KEY"),
+    text_input_type=CohereInputType.SEARCH_QUERY,
+)
 
 embeddings = kit.embed_text("Hello world")
 assert embeddings.shape[0] == 1
 assert len(embeddings.shape) == 2
 
-kit = EmbedKit.cohere(model=Model.COHERE_V4_0, api_key=os.getenv("COHERE_API_KEY"), text_input_type=CohereInputType.SEARCH_DOCUMENT)
+kit = EmbedKit.cohere(
+    model=Model.COHERE_V4_0,
+    api_key=os.getenv("COHERE_API_KEY"),
+    text_input_type=CohereInputType.SEARCH_DOCUMENT,
+)
 
 embeddings = kit.embed_text("Hello world")
 assert embeddings.shape[0] == 1
