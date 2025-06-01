@@ -9,7 +9,8 @@ from typing import Union, List, Iterator, Callable, TypeVar, Any
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 @contextmanager
 def temporary_directory() -> Iterator[Path]:
@@ -48,16 +49,11 @@ def pdf_to_images(pdf_path: Path) -> List[Path]:
         for i, image in enumerate(images):
             output_path = temp_dir / f"{pdf_path.stem}_{i}.png"
             image.save(output_path)
-            image_paths.append(output_path)
+            final_path = Path(tempfile.mktemp(suffix=".png"))
+            shutil.move(output_path, final_path)
+            image_paths.append(final_path)
 
-        # Return copies of the images in the system temp directory
-        final_paths = []
-        for img_path in image_paths:
-            final_path = Path(tempfile.mktemp(suffix='.png'))
-            shutil.copy2(img_path, final_path)
-            final_paths.append(final_path)
-
-        return final_paths
+        return image_paths
 
 
 def image_to_base64(image_path: Union[str, Path]) -> tuple[str, str]:
@@ -112,11 +108,14 @@ def with_pdf_cleanup(embed_func: Callable[..., T]) -> Callable[..., T]:
     Returns:
         Callable that takes a PDF path and returns embeddings
     """
+
     def wrapper(*args, **kwargs) -> T:
         # First argument is self for instance methods
-        pdf_path = args[-1] if args else kwargs.get('pdf_path')
+        pdf_path = args[-1] if args else kwargs.get("pdf_path")
         if not pdf_path:
-            raise ValueError("PDF path must be provided as the last positional argument or as 'pdf_path' keyword argument")
+            raise ValueError(
+                "PDF path must be provided as the last positional argument or as 'pdf_path' keyword argument"
+            )
 
         try:
             images = pdf_to_images(pdf_path)
@@ -126,14 +125,17 @@ def with_pdf_cleanup(embed_func: Callable[..., T]) -> Callable[..., T]:
                 args = list(args)
                 args[-1] = images
             else:
-                kwargs['pdf_path'] = images
+                kwargs["pdf_path"] = images
             return embed_func(*args, **kwargs)
         finally:
             # Clean up temporary files created by pdf_to_images
             for img_path in images:
                 try:
-                    if img_path.exists() and str(img_path).startswith(tempfile.gettempdir()):
+                    if img_path.exists() and str(img_path).startswith(
+                        tempfile.gettempdir()
+                    ):
                         img_path.unlink()
                 except Exception as e:
                     logger.warning(f"Failed to clean up temporary file {img_path}: {e}")
+
     return wrapper

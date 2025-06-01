@@ -93,8 +93,9 @@ class ColPaliProvider(EmbeddingProvider):
                 objects=[
                     EmbeddingObject(
                         embedding=e,
-                    ) for e in final_embeddings
-                ]
+                    )
+                    for e in final_embeddings
+                ],
             )
 
         except Exception as e:
@@ -152,11 +153,12 @@ class ColPaliProvider(EmbeddingProvider):
                     EmbeddingObject(
                         embedding=embedding,
                         source_b64=b64_data,
-                        source_content_type=content_type
-                    ) for embedding, b64_data, content_type in zip(
+                        source_content_type=content_type,
+                    )
+                    for embedding, b64_data, content_type in zip(
                         final_embeddings, all_b64_data, all_content_types
                     )
-                ]
+                ],
             )
 
         except Exception as e:

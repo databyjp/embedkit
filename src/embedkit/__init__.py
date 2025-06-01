@@ -83,10 +83,11 @@ class EmbedKit:
             raise ValueError(f"Unsupported model: {model}")
 
         provider = CohereProvider(
-            api_key=api_key, model_name=model_name,
+            api_key=api_key,
+            model_name=model_name,
             text_batch_size=text_batch_size,
             image_batch_size=image_batch_size,
-            text_input_type=text_input_type
+            text_input_type=text_input_type,
         )
         return cls(provider)
 

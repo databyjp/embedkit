@@ -13,9 +13,4 @@ from . import EmbeddingResponse, EmbeddingError
 from .models import Model
 from .providers.cohere import CohereInputType
 
-__all__ = [
-    "EmbeddingResponse",
-    "EmbeddingError",
-    "Model",
-    "CohereInputType"
-]
+__all__ = ["EmbeddingResponse", "EmbeddingError", "Model", "CohereInputType"]

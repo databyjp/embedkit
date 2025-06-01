@@ -79,8 +79,9 @@ class CohereProvider(EmbeddingProvider):
                 objects=[
                     EmbeddingObject(
                         embedding=e,
-                    ) for e in all_embeddings
-                ]
+                    )
+                    for e in all_embeddings
+                ],
             )
 
         except Exception as e:
@@ -134,9 +135,12 @@ class CohereProvider(EmbeddingProvider):
                     EmbeddingObject(
                         embedding=embedding,
                         source_b64=b64_data,
-                        source_content_type=content_type
-                    ) for embedding, (b64_data, content_type) in zip(all_embeddings, all_b64_images)
-                ]
+                        source_content_type=content_type,
+                    )
+                    for embedding, (b64_data, content_type) in zip(
+                        all_embeddings, all_b64_images
+                    )
+                ],
             )
 
         except Exception as e:
