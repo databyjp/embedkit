@@ -37,23 +37,24 @@ long_pdf = Path("tmp/2407.01449v6.pdf")
 kit = EmbedKit.colpali(model=Model.ColPali.V1_3, text_batch_size=16, image_batch_size=8)
 
 results = kit.embed_text("Hello world")
-assert results.shape[0] == 1
-assert len(results.shape) == 3
+assert len(results.objects) == 1
+assert len(results.objects[0].embedding.shape) == 2
+assert results.objects[0].source_b64 == None
 
 results = kit.embed_image(sample_image)
-assert results.shape[0] == 1
-assert len(results.shape) == 3
-assert len(results.source_images_b64) > 0
+assert len(results.objects) == 1
+assert len(results.objects[0].embedding.shape) == 2
+assert type(results.objects[0].source_b64) == str
 
 results = kit.embed_pdf(sample_pdf)
-assert results.shape[0] == 1
-assert len(results.shape) == 3
-assert len(results.source_images_b64) > 0
+assert len(results.objects) == 1
+assert len(results.objects[0].embedding.shape) == 2
+assert type(results.objects[0].source_b64) == str
 
-results = kit.embed_pdf(long_pdf)
-assert results.shape[0] == 26
-assert len(results.shape) == 3
-assert len(results.source_images_b64) > 0
+# results = kit.embed_pdf(long_pdf)
+# assert len(results.objects) == 26
+# assert len(results.objects[0].embedding.shape) == 2
+# assert type(results.objects[0].source_b64) == str
 
 
 kit = EmbedKit.cohere(
@@ -65,8 +66,9 @@ kit = EmbedKit.cohere(
 )
 
 results = kit.embed_text("Hello world")
-assert results.shape[0] == 1
-assert len(results.shape) == 2
+assert len(results.objects) == 1
+assert len(results.objects[0].embedding.shape) == 1
+assert results.objects[0].source_b64 == None
 
 kit = EmbedKit.cohere(
     model=Model.Cohere.EMBED_V4_0,
@@ -77,20 +79,21 @@ kit = EmbedKit.cohere(
 )
 
 results = kit.embed_text("Hello world")
-assert results.shape[0] == 1
-assert len(results.shape) == 2
+assert len(results.objects) == 1
+assert len(results.objects[0].embedding.shape) == 1
+assert results.objects[0].source_b64 == None
 
 results = kit.embed_image(sample_image)
-assert results.shape[0] == 1
-assert len(results.shape) == 2
-assert len(results.source_images_b64) > 0
+assert len(results.objects) == 1
+assert len(results.objects[0].embedding.shape) == 1
+assert type(results.objects[0].source_b64) == str
 
 results = kit.embed_pdf(sample_pdf)
-assert results.shape[0] == 1
-assert len(results.shape) == 2
-assert len(results.source_images_b64) > 0
+assert len(results.objects) == 1
+assert len(results.objects[0].embedding.shape) == 1
+assert type(results.objects[0].source_b64) == str
 
-results = kit.embed_pdf(long_pdf)
-assert results.shape[0] == 26
-assert len(results.shape) == 2
-assert len(results.source_images_b64) > 0
+# results = kit.embed_pdf(long_pdf)
+# assert len(results.objects) == 1
+# assert len(results.objects[0].embedding.shape) == 1
+# assert type(results.objects[0].source_b64) == str

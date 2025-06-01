@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 
 from .models import Model
-from .base import EmbeddingError, EmbeddingResult
+from .base import EmbeddingError, EmbeddingResponse
 from .providers import ColPaliProvider, CohereProvider
 from .providers.cohere import CohereInputType
 
@@ -84,8 +84,8 @@ class EmbedKit:
 
         provider = CohereProvider(
             api_key=api_key, model_name=model_name,
-            text_batch_size=48,
-            image_batch_size=8,
+            text_batch_size=text_batch_size,
+            image_batch_size=image_batch_size,
             text_input_type=text_input_type
         )
         return cls(provider)
@@ -103,7 +103,7 @@ class EmbedKit:
     #     provider = HuggingFaceProvider(model_name=model_name, device=device)
     #     return cls(provider)
 
-    def embed_text(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResult:
+    def embed_text(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
         """Generate document text embeddings using the configured provider.
 
         Args:
@@ -117,11 +117,11 @@ class EmbedKit:
 
     def embed_image(
         self, images: Union[Path, str, List[Union[Path, str]]]
-    ) -> EmbeddingResult:
+    ) -> EmbeddingResponse:
         """Generate image embeddings using the configured provider."""
         return self._provider.embed_image(images)
 
-    def embed_pdf(self, pdf: Union[Path, str]) -> EmbeddingResult:
+    def embed_pdf(self, pdf: Union[Path, str]) -> EmbeddingResponse:
         """Generate image embeddings from PDFsusing the configured provider. Takes a single PDF file."""
         return self._provider.embed_pdf(pdf)
 

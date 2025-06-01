@@ -7,7 +7,7 @@ import numpy as np
 from enum import Enum
 
 from ..utils import pdf_to_images, image_to_base64
-from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResult
+from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResponse, EmbeddingObject
 
 
 class CohereInputType(Enum):
@@ -51,7 +51,7 @@ class CohereProvider(EmbeddingProvider):
                 raise EmbeddingError(f"Failed to initialize Cohere client: {e}") from e
         return self._client
 
-    def embed_text(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResult:
+    def embed_text(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
         """Generate text embeddings using the Cohere API."""
         client = self._get_client()
 
@@ -70,13 +70,17 @@ class CohereProvider(EmbeddingProvider):
                     input_type=self.input_type.value,
                     embedding_types=["float"],
                 )
-                all_embeddings.extend(response.embeddings.float_)
+                all_embeddings.extend(np.array(response.embeddings.float_))
 
-            return EmbeddingResult(
-                embeddings=np.array(all_embeddings),
+            return EmbeddingResponse(
                 model_name=self.model_name,
                 model_provider=self.provider_name,
                 input_type=self.input_type.value,
+                objects=[
+                    EmbeddingObject(
+                        embedding=e,
+                    ) for e in all_embeddings
+                ]
             )
 
         except Exception as e:
@@ -85,7 +89,7 @@ class CohereProvider(EmbeddingProvider):
     def embed_image(
         self,
         images: Union[Path, str, List[Union[Path, str]]],
-    ) -> EmbeddingResult:
+    ) -> EmbeddingResponse:
         """Generate embeddings for images using Cohere API."""
         client = self._get_client()
         input_type = "image"
@@ -116,21 +120,25 @@ class CohereProvider(EmbeddingProvider):
                     embedding_types=["float"],
                 )
 
-                all_embeddings.extend(response.embeddings.float_)
+                all_embeddings.extend(np.array(response.embeddings.float_))
                 all_b64_images.extend(b64_images)
 
-            return EmbeddingResult(
-                embeddings=np.array(all_embeddings),
+            return EmbeddingResponse(
                 model_name=self.model_name,
                 model_provider=self.provider_name,
                 input_type=input_type,
-                source_images_b64=all_b64_images,
+                objects=[
+                    EmbeddingObject(
+                        embedding=all_embeddings[i],
+                        source_b64=all_b64_images[i]
+                    ) for i in range(len(all_embeddings))
+                ]
             )
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed image with Cohere: {e}") from e
 
-    def embed_pdf(self, pdf_path: Path) -> EmbeddingResult:
+    def embed_pdf(self, pdf_path: Path) -> EmbeddingResponse:
         """Generate embeddings for a PDF file using Cohere API."""
         image_paths = pdf_to_images(pdf_path)
         return self.embed_image(image_paths)

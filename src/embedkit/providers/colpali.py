@@ -9,7 +9,7 @@ import torch
 from PIL import Image
 
 from ..utils import pdf_to_images, image_to_base64
-from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResult
+from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResponse, EmbeddingObject
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +64,7 @@ class ColPaliProvider(EmbeddingProvider):
             except Exception as e:
                 raise EmbeddingError(f"Failed to load model: {e}") from e
 
-    def embed_text(self, texts: Union[str, List[str]]) -> np.ndarray:
+    def embed_text(self, texts: Union[str, List[str]]) -> EmbeddingResponse:
         """Generate embeddings for text inputs."""
         self._load_model()
 
@@ -86,11 +86,15 @@ class ColPaliProvider(EmbeddingProvider):
             # Concatenate all batch embeddings
             final_embeddings = np.concatenate(all_embeddings, axis=0)
 
-            return EmbeddingResult(
-                embeddings=final_embeddings,
+            return EmbeddingResponse(
                 model_name=self.model_name,
                 model_provider=self.provider_name,
                 input_type="text",
+                objects=[
+                    EmbeddingObject(
+                        embedding=e,
+                    ) for e in final_embeddings
+                ]
             )
 
         except Exception as e:
@@ -98,7 +102,7 @@ class ColPaliProvider(EmbeddingProvider):
 
     def embed_image(
         self, images: Union[Path, str, List[Union[Path, str]]]
-    ) -> np.ndarray:
+    ) -> EmbeddingResponse:
         """Generate embeddings for images."""
         self._load_model()
 
@@ -135,18 +139,22 @@ class ColPaliProvider(EmbeddingProvider):
             # Concatenate all batch embeddings
             final_embeddings = np.concatenate(all_embeddings, axis=0)
 
-            return EmbeddingResult(
-                embeddings=final_embeddings,
+            return EmbeddingResponse(
                 model_name=self.model_name,
                 model_provider=self.provider_name,
                 input_type="image",
-                source_images_b64=all_b64_images,
+                objects=[
+                    EmbeddingObject(
+                        embedding=final_embeddings[i],
+                        source_b64=all_b64_images[i]
+                    ) for i in range(len(final_embeddings))
+                ]
             )
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed images: {e}") from e
 
-    def embed_pdf(self, pdf_path: Path) -> EmbeddingResult:
+    def embed_pdf(self, pdf_path: Path) -> EmbeddingResponse:
         """Generate embeddings for a PDF file using ColPali API."""
         images = pdf_to_images(pdf_path)
         return self.embed_image(images)

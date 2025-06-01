@@ -9,12 +9,12 @@ This module provides the main types and enums that users should interact with:
 - CohereInputType: Enum for Cohere's input types
 """
 
-from . import EmbeddingResult, EmbeddingError
+from . import EmbeddingResponse, EmbeddingError
 from .models import Model
 from .providers.cohere import CohereInputType
 
 __all__ = [
-    "EmbeddingResult",
+    "EmbeddingResponse",
     "EmbeddingError",
     "Model",
     "CohereInputType"
