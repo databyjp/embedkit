@@ -2,7 +2,7 @@
 """Base classes for EmbedKit."""
 
 from abc import ABC, abstractmethod
-from typing import Union, List
+from typing import Union, List, Optional
 from pathlib import Path
 import numpy as np
 from dataclasses import dataclass
@@ -14,6 +14,7 @@ class EmbeddingResult:
     model_name: str
     model_provider: str
     input_type: str
+    source_images_b64: Optional[List[str]] = None
 
     @property
     def shape(self) -> tuple:

@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from ..utils import pdf_to_images
+from ..utils import pdf_to_images, image_to_base64
 from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResult
 
 logger = logging.getLogger(__name__)
@@ -92,6 +92,7 @@ class ColPaliProvider(EmbeddingProvider):
 
         try:
             pil_images = []
+            b64_images = []
             for img_path in images:
                 if not img_path.exists():
                     raise EmbeddingError(f"Image not found: {img_path}")
@@ -99,7 +100,13 @@ class ColPaliProvider(EmbeddingProvider):
                 with Image.open(img_path) as img:
                     pil_images.append(img.convert("RGB"))
 
+                for image in images:
+                    b64_image = image_to_base64(image)
+
+                b64_images.append(b64_image)
+
             processed = self._processor.process_images(pil_images).to(self.device)
+
 
             with torch.no_grad():
                 embeddings = self._model(**processed)
@@ -109,6 +116,7 @@ class ColPaliProvider(EmbeddingProvider):
                 model_name=self.model_name,
                 model_provider=self.provider_name,
                 input_type="image",
+                source_images_b64=b64_images,
             )
 
         except Exception as e:

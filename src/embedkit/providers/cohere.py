@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from enum import Enum
 
-from ..utils import pdf_to_images
+from ..utils import pdf_to_images, image_to_base64
 from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResult
 
 
@@ -84,38 +84,11 @@ class CohereProvider(EmbeddingProvider):
             images = [images]
 
         try:
-            import base64
-
             b64_images = []
             for image in images:
-                if isinstance(image, (Path, str)):
-                    try:
-                        base64_only = base64.b64encode(Path(image).read_bytes()).decode(
-                            "utf-8"
-                        )
-                    except Exception as e:
-                        raise EmbeddingError(
-                            f"Failed to read image {image}: {e}"
-                        ) from e
+                b64_image = image_to_base64(image)
 
-                    if isinstance(image, Path):
-                        image = str(image)
-
-                    if image.lower().endswith(".png"):
-                        content_type = "image/png"
-                    elif image.lower().endswith((".jpg", ".jpeg")):
-                        content_type = "image/jpeg"
-                    elif image.lower().endswith(".gif"):
-                        content_type = "image/gif"
-                    else:
-                        raise EmbeddingError(
-                            f"Unsupported image format for {image}; expected .png, .jpg, .jpeg, or .gif"
-                        )
-                    base64_image = f"data:{content_type};base64,{base64_only}"
-                else:
-                    raise EmbeddingError(f"Unsupported image type: {type(image)}")
-
-                b64_images.append(base64_image)
+            b64_images.append(b64_image)
 
             response = client.embed(
                 model=self.model_name,
@@ -129,6 +102,7 @@ class CohereProvider(EmbeddingProvider):
                 model_name=self.model_name,
                 model_provider=self.provider_name,
                 input_type=input_type,
+                source_images_b64=b64_images,
             )
 
         except Exception as e:

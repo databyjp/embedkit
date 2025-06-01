@@ -36,17 +36,19 @@ sample_pdf = Path("tests/fixtures/2407.01449v6_p1.pdf")
 
 kit = EmbedKit.colpali(model=Model.ColPali.V1_3)
 
-embeddings = kit.embed_text("Hello world")
-assert embeddings.shape[0] == 1
-assert len(embeddings.shape) == 3
+results = kit.embed_text("Hello world")
+assert results.shape[0] == 1
+assert len(results.shape) == 3
 
-embeddings = kit.embed_image(sample_image)
-assert embeddings.shape[0] == 1
-assert len(embeddings.shape) == 3
+results = kit.embed_image(sample_image)
+assert results.shape[0] == 1
+assert len(results.shape) == 3
+assert len(results.source_images_b64) > 0
 
-embeddings = kit.embed_pdf(sample_pdf)
-assert embeddings.shape[0] == 1
-assert len(embeddings.shape) == 3
+results = kit.embed_pdf(sample_pdf)
+assert results.shape[0] == 1
+assert len(results.shape) == 3
+assert len(results.source_images_b64) > 0
 
 
 kit = EmbedKit.cohere(
@@ -55,9 +57,9 @@ kit = EmbedKit.cohere(
     text_input_type=CohereInputType.SEARCH_QUERY,
 )
 
-embeddings = kit.embed_text("Hello world")
-assert embeddings.shape[0] == 1
-assert len(embeddings.shape) == 2
+results = kit.embed_text("Hello world")
+assert results.shape[0] == 1
+assert len(results.shape) == 2
 
 kit = EmbedKit.cohere(
     model=Model.Cohere.EMBED_V4_0,
@@ -65,14 +67,16 @@ kit = EmbedKit.cohere(
     text_input_type=CohereInputType.SEARCH_DOCUMENT,
 )
 
-embeddings = kit.embed_text("Hello world")
-assert embeddings.shape[0] == 1
-assert len(embeddings.shape) == 2
+results = kit.embed_text("Hello world")
+assert results.shape[0] == 1
+assert len(results.shape) == 2
 
-embeddings = kit.embed_image(sample_image)
-assert embeddings.shape[0] == 1
-assert len(embeddings.shape) == 2
+results = kit.embed_image(sample_image)
+assert results.shape[0] == 1
+assert len(results.shape) == 2
+assert len(results.source_images_b64) > 0
 
-embeddings = kit.embed_pdf(sample_pdf)
-assert embeddings.shape[0] == 1
-assert len(embeddings.shape) == 2
+results = kit.embed_pdf(sample_pdf)
+assert results.shape[0] == 1
+assert len(results.shape) == 2
+assert len(results.source_images_b64) > 0
