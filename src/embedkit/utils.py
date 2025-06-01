@@ -117,6 +117,7 @@ def with_pdf_cleanup(embed_func: Callable[..., T]) -> Callable[..., T]:
                 "PDF path must be provided as the last positional argument or as 'pdf_path' keyword argument"
             )
 
+        images = []  # Initialize images as empty list
         try:
             images = pdf_to_images(pdf_path)
             # Call the original function with the images instead of pdf_path

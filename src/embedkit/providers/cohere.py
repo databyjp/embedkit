@@ -5,10 +5,13 @@ from typing import Union, List
 from pathlib import Path
 import numpy as np
 from enum import Enum
+import logging
 
 from ..models import Model
 from ..utils import image_to_base64
-from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResponse, EmbeddingObject
+from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResponse
+
+logger = logging.getLogger(__name__)
 
 
 class CohereInputType(Enum):
@@ -85,6 +88,8 @@ class CohereProvider(EmbeddingProvider):
         """Generate embeddings for images using Cohere API."""
         client = self._get_client()
         images = self._normalize_image_input(images)
+        total_images = len(images)
+        logger.info(f"Starting to process {total_images} images")
 
         try:
             all_embeddings = []
@@ -93,6 +98,7 @@ class CohereProvider(EmbeddingProvider):
             # Process images in batches
             for i in range(0, len(images), self.image_batch_size):
                 batch_images = images[i : i + self.image_batch_size]
+                logger.info(f"Processing batch {i//self.image_batch_size + 1} of {(total_images + self.image_batch_size - 1)//self.image_batch_size} ({len(batch_images)} images)")
                 b64_images = []
 
                 for image in batch_images:
@@ -113,6 +119,7 @@ class CohereProvider(EmbeddingProvider):
 
                 all_embeddings.extend(np.array(response.embeddings.float_))
 
+            logger.info(f"Successfully processed all {total_images} images")
             return self._create_image_response(
                 all_embeddings,
                 [b64 for b64, _ in all_b64_images],
@@ -120,4 +127,5 @@ class CohereProvider(EmbeddingProvider):
             )
 
         except Exception as e:
+            logger.error(f"Failed to embed images: {e}")
             raise EmbeddingError(f"Failed to embed image with Cohere: {e}") from e

@@ -116,6 +116,8 @@ class ColPaliProvider(EmbeddingProvider):
         """Generate embeddings for images."""
         self._load_model()
         images = self._normalize_image_input(images)
+        total_images = len(images)
+        logger.info(f"Starting to process {total_images} images")
 
         try:
             # Process images in batches
@@ -125,6 +127,7 @@ class ColPaliProvider(EmbeddingProvider):
 
             for i in range(0, len(images), self.image_batch_size):
                 batch_images = images[i : i + self.image_batch_size]
+                logger.info(f"Processing batch {i//self.image_batch_size + 1} of {(total_images + self.image_batch_size - 1)//self.image_batch_size} ({len(batch_images)} images)")
                 pil_images = []
                 batch_b64_data = []
                 batch_content_types = []
@@ -149,9 +152,11 @@ class ColPaliProvider(EmbeddingProvider):
 
             # Concatenate all batch embeddings
             final_embeddings = np.concatenate(all_embeddings, axis=0)
+            logger.info(f"Successfully processed all {total_images} images")
             return self._create_image_response(
                 final_embeddings, all_b64_data, all_content_types
             )
 
         except Exception as e:
+            logger.error(f"Failed to embed images: {e}")
             raise EmbeddingError(f"Failed to embed images: {e}") from e
