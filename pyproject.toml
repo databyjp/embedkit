@@ -29,17 +29,6 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 keywords = ["embeddings", "vector", "ai", "machine-learning", "cohere", "colpali"]
-project-urls = {
-    "Documentation" = "https://github.com/jphwang/embedkit#readme",
-    "Repository" = "https://github.com/jphwang/embedkit",
-    "Bug Tracker" = "https://github.com/jphwang/embedkit/issues",
-}
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.0.0",
-    "pytest-cov>=4.1.0",
-]
 
 [build-system]
 requires = ["hatchling"]
@@ -59,6 +48,8 @@ filterwarnings = [
 
 [tool.uv]
 dev-dependencies = [
+    "build>=1.2.2.post1",
     "pytest>=8.0.0",
     "pytest-cov>=4.1.0",
+    "twine>=6.1.0",
 ]
