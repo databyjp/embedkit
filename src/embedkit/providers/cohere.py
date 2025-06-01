@@ -24,10 +24,14 @@ class CohereProvider(EmbeddingProvider):
         self,
         api_key: str,
         model_name: str,
+        text_batch_size: int,
+        image_batch_size: int,
         text_input_type: CohereInputType = CohereInputType.SEARCH_DOCUMENT,
     ):
         self.api_key = api_key
         self.model_name = model_name
+        self.text_batch_size = text_batch_size
+        self.image_batch_size = image_batch_size
         self.input_type = text_input_type
         self._client = None
         self.provider_name = "Cohere"
@@ -55,15 +59,21 @@ class CohereProvider(EmbeddingProvider):
             texts = [texts]
 
         try:
-            response = client.embed(
-                texts=texts,
-                model=self.model_name,
-                input_type=self.input_type.value,
-                embedding_types=["float"],
-            )
+            all_embeddings = []
+
+            # Process texts in batches
+            for i in range(0, len(texts), self.text_batch_size):
+                batch_texts = texts[i : i + self.text_batch_size]
+                response = client.embed(
+                    texts=batch_texts,
+                    model=self.model_name,
+                    input_type=self.input_type.value,
+                    embedding_types=["float"],
+                )
+                all_embeddings.extend(response.embeddings.float_)
 
             return EmbeddingResult(
-                embeddings=np.array(response.embeddings.float_),
+                embeddings=np.array(all_embeddings),
                 model_name=self.model_name,
                 model_provider=self.provider_name,
                 input_type=self.input_type.value,
@@ -81,33 +91,44 @@ class CohereProvider(EmbeddingProvider):
         input_type = "image"
 
         if isinstance(images, (str, Path)):
-            images = [images]
+            images = [Path(images)]
+        else:
+            images = [Path(img) for img in images]
 
         try:
-            b64_images = []
-            for image in images:
-                b64_image = image_to_base64(image)
+            all_embeddings = []
+            all_b64_images = []
 
-            b64_images.append(b64_image)
+            # Process images in batches
+            for i in range(0, len(images), self.image_batch_size):
+                batch_images = images[i : i + self.image_batch_size]
+                b64_images = []
 
-            response = client.embed(
-                model=self.model_name,
-                input_type="image",
-                images=b64_images,
-                embedding_types=["float"],
-            )
+                for image in batch_images:
+                    if not image.exists():
+                        raise EmbeddingError(f"Image not found: {image}")
+                    b64_images.append(image_to_base64(image))
+
+                response = client.embed(
+                    model=self.model_name,
+                    input_type="image",
+                    images=b64_images,
+                    embedding_types=["float"],
+                )
+
+                all_embeddings.extend(response.embeddings.float_)
+                all_b64_images.extend(b64_images)
 
             return EmbeddingResult(
-                embeddings=np.array(response.embeddings.float_),
+                embeddings=np.array(all_embeddings),
                 model_name=self.model_name,
                 model_provider=self.provider_name,
                 input_type=input_type,
-                source_images_b64=b64_images,
+                source_images_b64=all_b64_images,
             )
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed image with Cohere: {e}") from e
-
 
     def embed_pdf(self, pdf_path: Path) -> EmbeddingResult:
         """Generate embeddings for a PDF file using Cohere API."""

@@ -37,9 +37,7 @@ class EmbeddingProvider(ABC):
         pass
 
     @abstractmethod
-    def embed_pdf(
-        self, pdf: Union[Path, str]
-    ) -> EmbeddingResult:
+    def embed_pdf(self, pdf: Union[Path, str]) -> EmbeddingResult:
         """Generate image embeddings from PDFsusing the configured provider. Takes a single PDF file."""
         pass
 

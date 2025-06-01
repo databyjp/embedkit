@@ -26,13 +26,9 @@ def image_to_base64(image_path: Union[str, Path]):
     import base64
 
     try:
-        base64_only = base64.b64encode(Path(image_path).read_bytes()).decode(
-            "utf-8"
-        )
+        base64_only = base64.b64encode(Path(image_path).read_bytes()).decode("utf-8")
     except Exception as e:
-        raise ValueError(
-            f"Failed to read image {image_path}: {e}"
-        ) from e
+        raise ValueError(f"Failed to read image {image_path}: {e}") from e
 
     if isinstance(image_path, Path):
         image_path_str = str(image_path)

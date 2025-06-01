@@ -17,9 +17,17 @@ logger = logging.getLogger(__name__)
 class ColPaliProvider(EmbeddingProvider):
     """ColPali embedding provider for document understanding."""
 
-    def __init__(self, model_name: str, device: Optional[str] = None):
+    def __init__(
+        self,
+        model_name: str,
+        text_batch_size: int,
+        image_batch_size: int,
+        device: Optional[str] = None,
+    ):
         self.model_name = model_name
         self.provider_name = "ColPali"
+        self.text_batch_size = text_batch_size
+        self.image_batch_size = image_batch_size
 
         # Auto-detect device
         if device is None:
@@ -64,13 +72,22 @@ class ColPaliProvider(EmbeddingProvider):
             texts = [texts]
 
         try:
-            processed = self._processor.process_queries(texts).to(self.device)
+            # Process texts in batches
+            all_embeddings = []
 
-            with torch.no_grad():
-                embeddings = self._model(**processed)
+            for i in range(0, len(texts), self.text_batch_size):
+                batch_texts = texts[i : i + self.text_batch_size]
+                processed = self._processor.process_queries(batch_texts).to(self.device)
+
+                with torch.no_grad():
+                    batch_embeddings = self._model(**processed)
+                    all_embeddings.append(batch_embeddings.cpu().float().numpy())
+
+            # Concatenate all batch embeddings
+            final_embeddings = np.concatenate(all_embeddings, axis=0)
 
             return EmbeddingResult(
-                embeddings=embeddings.cpu().float().numpy(),
+                embeddings=final_embeddings,
                 model_name=self.model_name,
                 model_provider=self.provider_name,
                 input_type="text",
@@ -91,37 +108,43 @@ class ColPaliProvider(EmbeddingProvider):
             images = [Path(img) for img in images]
 
         try:
-            pil_images = []
-            b64_images = []
-            for img_path in images:
-                if not img_path.exists():
-                    raise EmbeddingError(f"Image not found: {img_path}")
+            # Process images in batches
+            all_embeddings = []
+            all_b64_images = []
 
-                with Image.open(img_path) as img:
-                    pil_images.append(img.convert("RGB"))
+            for i in range(0, len(images), self.image_batch_size):
+                batch_images = images[i : i + self.image_batch_size]
+                pil_images = []
+                b64_images = []
 
-                for image in images:
-                    b64_image = image_to_base64(image)
+                for img_path in batch_images:
+                    if not img_path.exists():
+                        raise EmbeddingError(f"Image not found: {img_path}")
 
-                b64_images.append(b64_image)
+                    with Image.open(img_path) as img:
+                        pil_images.append(img.convert("RGB"))
+                    b64_images.append(image_to_base64(img_path))
 
-            processed = self._processor.process_images(pil_images).to(self.device)
+                processed = self._processor.process_images(pil_images).to(self.device)
 
+                with torch.no_grad():
+                    batch_embeddings = self._model(**processed)
+                    all_embeddings.append(batch_embeddings.cpu().float().numpy())
+                    all_b64_images.extend(b64_images)
 
-            with torch.no_grad():
-                embeddings = self._model(**processed)
+            # Concatenate all batch embeddings
+            final_embeddings = np.concatenate(all_embeddings, axis=0)
 
             return EmbeddingResult(
-                embeddings=embeddings.cpu().float().numpy(),
+                embeddings=final_embeddings,
                 model_name=self.model_name,
                 model_provider=self.provider_name,
                 input_type="image",
-                source_images_b64=b64_images,
+                source_images_b64=all_b64_images,
             )
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed images: {e}") from e
-
 
     def embed_pdf(self, pdf_path: Path) -> EmbeddingResult:
         """Generate embeddings for a PDF file using ColPali API."""

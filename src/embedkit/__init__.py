@@ -26,21 +26,33 @@ class EmbedKit:
         self._provider = provider_instance
 
     @classmethod
-    def colpali(cls, model: Model = Model.ColPali.V1_3, device: Optional[str] = None):
+    def colpali(
+        cls,
+        model: Model = Model.ColPali.V1_3,
+        device: Optional[str] = None,
+        text_batch_size: int = 32,
+        image_batch_size: int = 8,
+    ):
         """
         Create EmbedKit instance with ColPali provider.
 
         Args:
             model: ColPali model enum
             device: Device to run on ('cuda', 'mps', 'cpu', or None for auto-detect)
+            text_batch_size: Batch size for text embedding generation
+            image_batch_size: Batch size for image embedding generation
         """
         if model == Model.ColPali.V1_3:
             model_name = "vidore/colpali-v1.3"
         else:
             raise ValueError(f"Unsupported model: {model}")
 
-
-        provider = ColPaliProvider(model_name=model_name, device=device)
+        provider = ColPaliProvider(
+            model_name=model_name,
+            device=device,
+            text_batch_size=text_batch_size,
+            image_batch_size=image_batch_size,
+        )
         return cls(provider)
 
     @classmethod
@@ -48,6 +60,8 @@ class EmbedKit:
         cls,
         api_key: str,
         model: Model = Model.Cohere.EMBED_V4_0,
+        text_batch_size: int = 32,
+        image_batch_size: int = 8,
         text_input_type: CohereInputType = CohereInputType.SEARCH_DOCUMENT,
     ):
         """
@@ -56,6 +70,8 @@ class EmbedKit:
         Args:
             api_key: Cohere API key
             model: Cohere model enum
+            text_batch_size: Batch size for text embedding generation
+            image_batch_size: Batch size for image embedding generation
             input_type: Type of input for embedding (search_document or search_query)
         """
         if not api_key:
@@ -67,7 +83,10 @@ class EmbedKit:
             raise ValueError(f"Unsupported model: {model}")
 
         provider = CohereProvider(
-            api_key=api_key, model_name=model_name, text_input_type=text_input_type
+            api_key=api_key, model_name=model_name,
+            text_batch_size=48,
+            image_batch_size=8,
+            text_input_type=text_input_type
         )
         return cls(provider)
 
