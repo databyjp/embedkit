@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from PIL import Image
 
+from ..utils import pdf_to_images
 from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResult
 
 logger = logging.getLogger(__name__)
@@ -112,3 +113,9 @@ class ColPaliProvider(EmbeddingProvider):
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed images: {e}") from e
+
+
+    def embed_pdf(self, pdf_path: Path) -> EmbeddingResult:
+        """Generate embeddings for a PDF file using ColPali API."""
+        images = pdf_to_images(pdf_path)
+        return self.embed_image(images)

@@ -8,6 +8,7 @@ dependencies = [
     "accelerate>=1.7.0",
     "cohere>=5.15.0",
     "colpali-engine>=0.3.0,<0.4.0",
+    "pdf2image>=1.17.0",
     "pillow>=11.2.1",
     "torch<=2.5",
     "transformers",

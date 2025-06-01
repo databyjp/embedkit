@@ -1,3 +1,4 @@
+# tests/test_embedkit.py
 import os
 import pytest
 from pathlib import Path
@@ -8,43 +9,25 @@ from embedkit.providers.cohere import CohereInputType
 
 # Fixture for sample image
 @pytest.fixture
-def sample_image():
+def sample_image_path():
     """Fixture to provide a sample image for testing."""
-    url = "https://upload.wikimedia.org/wikipedia/commons/b/b8/English_Wikipedia_HomePage_2001-12-20.png"
-    import requests
-    from tempfile import NamedTemporaryFile
-
-    headers = {"User-Agent": "EmbedKit-Example/1.0"}
-    response = requests.get(url, headers=headers)
-    response.raise_for_status()
-
-    temp_file = NamedTemporaryFile(delete=False, suffix=".png")
-    temp_file.write(response.content)
-    temp_file.close()
-
-    return Path(temp_file.name)
+    path = Path("tests/fixtures/2407.01449v6_p1.png")
+    if not path.exists():
+        pytest.skip(f"Test fixture not found: {path}")
+    return path
 
 
-# Colpali tests
-def test_colpali_text_embedding():
-    """Test text embedding with Colpali model."""
-    kit = EmbedKit.colpali(model=Model.COLPALI_V1_3)
-    embeddings = kit.embed_text("Hello world")
-
-    assert embeddings.shape[0] == 1
-    assert len(embeddings.shape) == 3
-
-
-def test_colpali_image_embedding(sample_image):
-    """Test image embedding with Colpali model."""
-    kit = EmbedKit.colpali(model=Model.COLPALI_V1_3)
-    embeddings = kit.embed_image(sample_image)
-
-    assert embeddings.shape[0] == 1
-    assert len(embeddings.shape) == 3
+# Fixture for sample PDF
+@pytest.fixture
+def sample_pdf_path():
+    """Fixture to provide a sample PDF for testing."""
+    path = Path("tests/fixtures/2407.01449v6_p1.pdf")
+    if not path.exists():
+        pytest.skip(f"Test fixture not found: {path}")
+    return path
 
 
-# Cohere tests
+# Cohere fixtures
 @pytest.fixture
 def cohere_kit_search_query():
     """Fixture for Cohere kit with search query input type."""
@@ -65,37 +48,44 @@ def cohere_kit_search_document():
     )
 
 
-def test_cohere_search_query_text_embedding(cohere_kit_search_query):
-    """Test text embedding with Cohere search query model."""
-    embeddings = cohere_kit_search_query.embed_text("Hello world")
+# ===============================
+# Cohere tests
+# ===============================
+@pytest.mark.parametrize(
+    "cohere_kit_fixture", ["cohere_kit_search_query", "cohere_kit_search_document"]
+)
+def test_cohere_text_embedding(request, cohere_kit_fixture):
+    """Test text embedding with Cohere models."""
+    kit = request.getfixturevalue(cohere_kit_fixture)
+    embeddings = kit.embed_text("Hello world")
 
     assert embeddings.shape[0] == 1
     assert len(embeddings.shape) == 2
 
 
-def test_cohere_search_document_text_embedding(cohere_kit_search_document):
-    """Test text embedding with Cohere search document model."""
-    embeddings = cohere_kit_search_document.embed_text("Hello world")
-
-    assert embeddings.shape[0] == 1
-    assert len(embeddings.shape) == 2
-
-
-def test_cohere_search_document_image_embedding(
-    cohere_kit_search_document, sample_image
+@pytest.mark.parametrize(
+    "embed_method,file_fixture",
+    [
+        ("embed_image", "sample_image_path"),
+        ("embed_pdf", "sample_pdf_path"),
+    ],
+)
+def test_cohere_search_document_file_embedding(
+    request, embed_method, file_fixture, cohere_kit_search_document
 ):
-    """Test image embedding with Cohere search document model."""
-    embeddings = cohere_kit_search_document.embed_image(sample_image)
+    """Test file embedding with Cohere search document model."""
+    file_path = request.getfixturevalue(file_fixture)
+    embed_func = getattr(cohere_kit_search_document, embed_method)
+    embeddings = embed_func(file_path)
 
     assert embeddings.shape[0] == 1
     assert len(embeddings.shape) == 2
 
 
-# Error cases
-def test_colpali_invalid_model():
+def test_cohere_invalid_model():
     """Test that invalid model raises appropriate error."""
     with pytest.raises(ValueError):
-        EmbedKit.colpali(model="invalid_model")
+        EmbedKit.cohere(model="invalid_model")
 
 
 def test_cohere_missing_api_key():
@@ -106,3 +96,39 @@ def test_cohere_missing_api_key():
             api_key=None,
             text_input_type=CohereInputType.SEARCH_QUERY,
         )
+
+
+# ===============================
+# ColPali tests
+# ===============================
+def test_colpali_text_embedding():
+    """Test text embedding with Colpali model."""
+    kit = EmbedKit.colpali(model=Model.COLPALI_V1_3)
+    embeddings = kit.embed_text("Hello world")
+
+    assert embeddings.shape[0] == 1
+    assert len(embeddings.shape) == 3
+
+
+@pytest.mark.parametrize(
+    "embed_method,file_fixture,expected_dims",
+    [
+        ("embed_image", "sample_image_path", 3),
+        ("embed_pdf", "sample_pdf_path", 3),
+    ],
+)
+def test_colpali_file_embedding(request, embed_method, file_fixture, expected_dims):
+    """Test file embedding with Colpali model."""
+    kit = EmbedKit.colpali(model=Model.COLPALI_V1_3)
+    file_path = request.getfixturevalue(file_fixture)
+    embed_func = getattr(kit, embed_method)
+    embeddings = embed_func(file_path)
+
+    assert embeddings.shape[0] == 1
+    assert len(embeddings.shape) == expected_dims
+
+
+def test_colpali_invalid_model():
+    """Test that invalid model raises appropriate error."""
+    with pytest.raises(ValueError):
+        EmbedKit.colpali(model="invalid_model")

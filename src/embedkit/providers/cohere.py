@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 from enum import Enum
 
+from ..utils import pdf_to_images
 from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResult
 
 
@@ -132,3 +133,9 @@ class CohereProvider(EmbeddingProvider):
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed image with Cohere: {e}") from e
+
+
+    def embed_pdf(self, pdf_path: Path) -> EmbeddingResult:
+        """Generate embeddings for a PDF file using Cohere API."""
+        image_paths = pdf_to_images(pdf_path)
+        return self.embed_image(image_paths)

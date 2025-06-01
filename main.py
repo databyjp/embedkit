@@ -32,15 +32,17 @@ def get_sample_image() -> Path:
 
 sample_image = get_sample_image()
 
-kit = EmbedKit.colpali(model=Model.COLPALI_V1_3)
+sample_pdf = Path("tests/fixtures/2407.01449v6_p1.pdf")
 
-embeddings = kit.embed_text("Hello world")
-assert embeddings.shape[0] == 1
-assert len(embeddings.shape) == 3
+# kit = EmbedKit.colpali(model=Model.COLPALI_V1_3)
 
-embeddings = kit.embed_image(sample_image)
-assert embeddings.shape[0] == 1
-assert len(embeddings.shape) == 3
+# embeddings = kit.embed_text("Hello world")
+# assert embeddings.shape[0] == 1
+# assert len(embeddings.shape) == 3
+
+# embeddings = kit.embed_image(sample_image)
+# assert embeddings.shape[0] == 1
+# assert len(embeddings.shape) == 3
 
 
 kit = EmbedKit.cohere(
@@ -59,10 +61,14 @@ kit = EmbedKit.cohere(
     text_input_type=CohereInputType.SEARCH_DOCUMENT,
 )
 
-embeddings = kit.embed_text("Hello world")
-assert embeddings.shape[0] == 1
-assert len(embeddings.shape) == 2
+# embeddings = kit.embed_text("Hello world")
+# assert embeddings.shape[0] == 1
+# assert len(embeddings.shape) == 2
 
-embeddings = kit.embed_image(sample_image)
+# embeddings = kit.embed_image(sample_image)
+# assert embeddings.shape[0] == 1
+# assert len(embeddings.shape) == 2
+
+embeddings = kit.embed_pdf(sample_pdf)
 assert embeddings.shape[0] == 1
 assert len(embeddings.shape) == 2
