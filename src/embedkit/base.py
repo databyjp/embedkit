@@ -12,6 +12,7 @@ from dataclasses import dataclass
 class EmbeddingObject:
     embedding: np.ndarray
     source_b64: str = None
+    source_content_type: str = None  # e.g., "image/png", "image/jpeg"
 
 
 @dataclass

@@ -22,11 +22,22 @@ def pdf_to_images(pdf_path: Path) -> list[Path]:
     return image_paths
 
 
-def image_to_base64(image_path: Union[str, Path]):
+def image_to_base64(image_path: Union[str, Path]) -> tuple[str, str]:
+    """Convert an image to base64 and return the base64 data and content type.
+
+    Args:
+        image_path: Path to the image file
+
+    Returns:
+        tuple[str, str]: (base64_data, content_type)
+
+    Raises:
+        ValueError: If the image cannot be read or has an unsupported format
+    """
     import base64
 
     try:
-        base64_only = base64.b64encode(Path(image_path).read_bytes()).decode("utf-8")
+        base64_data = base64.b64encode(Path(image_path).read_bytes()).decode("utf-8")
     except Exception as e:
         raise ValueError(f"Failed to read image {image_path}: {e}") from e
 
@@ -43,6 +54,5 @@ def image_to_base64(image_path: Union[str, Path]):
         raise ValueError(
             f"Unsupported image format for {image_path}; expected .png, .jpg, .jpeg, or .gif"
         )
-    base64_image = f"data:{content_type};base64,{base64_only}"
 
-    return base64_image
+    return base64_data, content_type

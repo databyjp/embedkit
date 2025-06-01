@@ -111,7 +111,11 @@ class CohereProvider(EmbeddingProvider):
                 for image in batch_images:
                     if not image.exists():
                         raise EmbeddingError(f"Image not found: {image}")
-                    b64_images.append(image_to_base64(image))
+                    b64_data, content_type = image_to_base64(image)
+                    # Construct full data URI for API
+                    data_uri = f"data:{content_type};base64,{b64_data}"
+                    b64_images.append(data_uri)
+                    all_b64_images.append((b64_data, content_type))
 
                 response = client.embed(
                     model=self.model_name,
@@ -121,7 +125,6 @@ class CohereProvider(EmbeddingProvider):
                 )
 
                 all_embeddings.extend(np.array(response.embeddings.float_))
-                all_b64_images.extend(b64_images)
 
             return EmbeddingResponse(
                 model_name=self.model_name,
@@ -129,9 +132,10 @@ class CohereProvider(EmbeddingProvider):
                 input_type=input_type,
                 objects=[
                     EmbeddingObject(
-                        embedding=all_embeddings[i],
-                        source_b64=all_b64_images[i]
-                    ) for i in range(len(all_embeddings))
+                        embedding=embedding,
+                        source_b64=b64_data,
+                        source_content_type=content_type
+                    ) for embedding, (b64_data, content_type) in zip(all_embeddings, all_b64_images)
                 ]
             )
 

@@ -114,12 +114,14 @@ class ColPaliProvider(EmbeddingProvider):
         try:
             # Process images in batches
             all_embeddings = []
-            all_b64_images = []
+            all_b64_data = []
+            all_content_types = []
 
             for i in range(0, len(images), self.image_batch_size):
                 batch_images = images[i : i + self.image_batch_size]
                 pil_images = []
-                b64_images = []
+                batch_b64_data = []
+                batch_content_types = []
 
                 for img_path in batch_images:
                     if not img_path.exists():
@@ -127,14 +129,17 @@ class ColPaliProvider(EmbeddingProvider):
 
                     with Image.open(img_path) as img:
                         pil_images.append(img.convert("RGB"))
-                    b64_images.append(image_to_base64(img_path))
+                    b64, content_type = image_to_base64(img_path)
+                    batch_b64_data.append(b64)
+                    batch_content_types.append(content_type)
 
                 processed = self._processor.process_images(pil_images).to(self.device)
 
                 with torch.no_grad():
                     batch_embeddings = self._model(**processed)
                     all_embeddings.append(batch_embeddings.cpu().float().numpy())
-                    all_b64_images.extend(b64_images)
+                    all_b64_data.extend(batch_b64_data)
+                    all_content_types.extend(batch_content_types)
 
             # Concatenate all batch embeddings
             final_embeddings = np.concatenate(all_embeddings, axis=0)
@@ -145,9 +150,12 @@ class ColPaliProvider(EmbeddingProvider):
                 input_type="image",
                 objects=[
                     EmbeddingObject(
-                        embedding=final_embeddings[i],
-                        source_b64=all_b64_images[i]
-                    ) for i in range(len(final_embeddings))
+                        embedding=embedding,
+                        source_b64=b64_data,
+                        source_content_type=content_type
+                    ) for embedding, b64_data, content_type in zip(
+                        final_embeddings, all_b64_data, all_content_types
+                    )
                 ]
             )
 
