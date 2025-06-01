@@ -4,8 +4,9 @@
 from enum import Enum
 
 
-class Model(Enum):
-    """Available embedding models."""
+class Model:
+    class ColPali(Enum):
+        V1_3 = "colpali-v1.3"
 
-    COLPALI_V1_3 = "colpali-v1.3"
-    COHERE_V4_0 = "embed-v4.0"
+    class Cohere(Enum):
+        EMBED_V4_0 = "embed-v4.0"

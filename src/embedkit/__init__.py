@@ -26,7 +26,7 @@ class EmbedKit:
         self._provider = provider_instance
 
     @classmethod
-    def colpali(cls, model: Model = Model.COLPALI_V1_3, device: Optional[str] = None):
+    def colpali(cls, model: Model = Model.ColPali.V1_3, device: Optional[str] = None):
         """
         Create EmbedKit instance with ColPali provider.
 
@@ -34,7 +34,7 @@ class EmbedKit:
             model: ColPali model enum
             device: Device to run on ('cuda', 'mps', 'cpu', or None for auto-detect)
         """
-        if model == Model.COLPALI_V1_3:
+        if model == Model.ColPali.V1_3:
             model_name = "vidore/colpali-v1.3"
         else:
             raise ValueError(f"Unsupported model: {model}")
@@ -47,7 +47,7 @@ class EmbedKit:
     def cohere(
         cls,
         api_key: str,
-        model: Model = Model.COHERE_V4_0,
+        model: Model = Model.Cohere.EMBED_V4_0,
         text_input_type: CohereInputType = CohereInputType.SEARCH_DOCUMENT,
     ):
         """
@@ -61,7 +61,7 @@ class EmbedKit:
         if not api_key:
             raise ValueError("API key is required")
 
-        if model == Model.COHERE_V4_0:
+        if model == Model.Cohere.EMBED_V4_0:
             model_name = "embed-v4.0"
         else:
             raise ValueError(f"Unsupported model: {model}")

@@ -12,11 +12,11 @@ from embedkit.models import Model
 
 # Instantiate a kit
 # Using ColPali
-kit = EmbedKit.colpali(model=Model.COLPALI_V1_3)
+kit = EmbedKit.colpali(model=Model.ColPali.V1_3)
 
 # Using Cohere
 kit = EmbedKit.cohere(
-    model=Model.COHERE_V4_0,
+    model=Model.Cohere.EMBED_V4_0,
     api_key="your_api_key",
     text_input_type=CohereInputType.SEARCH_DOCUMENT,
 )

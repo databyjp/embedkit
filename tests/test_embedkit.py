@@ -32,7 +32,7 @@ def sample_pdf_path():
 def cohere_kit_search_query():
     """Fixture for Cohere kit with search query input type."""
     return EmbedKit.cohere(
-        model=Model.COHERE_V4_0,
+        model=Model.Cohere.EMBED_V4_0,
         api_key=os.getenv("COHERE_API_KEY"),
         text_input_type=CohereInputType.SEARCH_QUERY,
     )
@@ -42,7 +42,7 @@ def cohere_kit_search_query():
 def cohere_kit_search_document():
     """Fixture for Cohere kit with search document input type."""
     return EmbedKit.cohere(
-        model=Model.COHERE_V4_0,
+        model=Model.Cohere.EMBED_V4_0,
         api_key=os.getenv("COHERE_API_KEY"),
         text_input_type=CohereInputType.SEARCH_DOCUMENT,
     )
@@ -95,7 +95,7 @@ def test_cohere_missing_api_key():
     """Test that missing API key raises appropriate error."""
     with pytest.raises(ValueError):
         EmbedKit.cohere(
-            model=Model.COHERE_V4_0,
+            model=Model.Cohere.EMBED_V4_0,
             api_key=None,
             text_input_type=CohereInputType.SEARCH_QUERY,
         )
@@ -106,7 +106,7 @@ def test_cohere_missing_api_key():
 # ===============================
 def test_colpali_text_embedding():
     """Test text embedding with Colpali model."""
-    kit = EmbedKit.colpali(model=Model.COLPALI_V1_3)
+    kit = EmbedKit.colpali(model=Model.ColPali.V1_3)
     embeddings = kit.embed_text("Hello world")
 
     assert embeddings.shape[0] == 1
@@ -122,7 +122,7 @@ def test_colpali_text_embedding():
 )
 def test_colpali_file_embedding(request, embed_method, file_fixture, expected_dims):
     """Test file embedding with Colpali model."""
-    kit = EmbedKit.colpali(model=Model.COLPALI_V1_3)
+    kit = EmbedKit.colpali(model=Model.ColPali.V1_3)
     file_path = request.getfixturevalue(file_fixture)
     embed_func = getattr(kit, embed_method)
     embeddings = embed_func(file_path)
