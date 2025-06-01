@@ -1,25 +1,63 @@
+import tempfile
+import shutil
+import logging
+from contextlib import contextmanager
 from pdf2image import convert_from_path
 from pathlib import Path
 from .config import get_temp_dir
-from typing import Union
+from typing import Union, List, Iterator, Callable, TypeVar, Any
+
+logger = logging.getLogger(__name__)
+
+T = TypeVar('T')
+
+@contextmanager
+def temporary_directory() -> Iterator[Path]:
+    """Create a temporary directory that is automatically cleaned up when done.
+
+    Yields:
+        Path: Path to the temporary directory
+    """
+    temp_dir = Path(tempfile.mkdtemp())
+    try:
+        yield temp_dir
+    finally:
+        shutil.rmtree(temp_dir)
 
 
-def pdf_to_images(pdf_path: Path) -> list[Path]:
-    """Convert a PDF file to a list of images."""
-    root_temp_dir = get_temp_dir()
-    img_temp_dir = root_temp_dir / "images"
-    img_temp_dir.mkdir(parents=True, exist_ok=True)
-    images = convert_from_path(pdf_path=str(pdf_path), output_folder=str(img_temp_dir))
-    image_paths = []
+def pdf_to_images(pdf_path: Path) -> List[Path]:
+    """Convert a PDF file to a list of images.
 
-    for i, image in enumerate(images):
-        output_path = img_temp_dir / f"{pdf_path.stem}_{i}.png"
-        if output_path.exists():
-            output_path.unlink()
+    The images are stored in a temporary directory that will be automatically
+    cleaned up when the process exits.
 
-        image.save(output_path)
-        image_paths.append(output_path)
-    return image_paths
+    Args:
+        pdf_path: Path to the PDF file
+
+    Returns:
+        List[Path]: List of paths to the generated images
+
+    Note:
+        The temporary files will be automatically cleaned up when the process exits.
+        Do not rely on these files persisting after the function returns.
+    """
+    with temporary_directory() as temp_dir:
+        images = convert_from_path(pdf_path=str(pdf_path), output_folder=str(temp_dir))
+        image_paths = []
+
+        for i, image in enumerate(images):
+            output_path = temp_dir / f"{pdf_path.stem}_{i}.png"
+            image.save(output_path)
+            image_paths.append(output_path)
+
+        # Return copies of the images in the system temp directory
+        final_paths = []
+        for img_path in image_paths:
+            final_path = Path(tempfile.mktemp(suffix='.png'))
+            shutil.copy2(img_path, final_path)
+            final_paths.append(final_path)
+
+        return final_paths
 
 
 def image_to_base64(image_path: Union[str, Path]) -> tuple[str, str]:
@@ -43,6 +81,8 @@ def image_to_base64(image_path: Union[str, Path]) -> tuple[str, str]:
 
     if isinstance(image_path, Path):
         image_path_str = str(image_path)
+    else:
+        image_path_str = image_path
 
     if image_path_str.lower().endswith(".png"):
         content_type = "image/png"
@@ -56,3 +96,44 @@ def image_to_base64(image_path: Union[str, Path]) -> tuple[str, str]:
         )
 
     return base64_data, content_type
+
+
+def with_pdf_cleanup(embed_func: Callable[..., T]) -> Callable[..., T]:
+    """Decorator to handle PDF to image conversion with automatic cleanup.
+
+    This decorator handles the common pattern of:
+    1. Converting PDF to images
+    2. Passing images to an embedding function
+    3. Cleaning up temporary files
+
+    Args:
+        embed_func: Function that takes a list of image paths and returns embeddings
+
+    Returns:
+        Callable that takes a PDF path and returns embeddings
+    """
+    def wrapper(*args, **kwargs) -> T:
+        # First argument is self for instance methods
+        pdf_path = args[-1] if args else kwargs.get('pdf_path')
+        if not pdf_path:
+            raise ValueError("PDF path must be provided as the last positional argument or as 'pdf_path' keyword argument")
+
+        try:
+            images = pdf_to_images(pdf_path)
+            # Call the original function with the images instead of pdf_path
+            if args:
+                # For instance methods, replace the last argument (pdf_path) with images
+                args = list(args)
+                args[-1] = images
+            else:
+                kwargs['pdf_path'] = images
+            return embed_func(*args, **kwargs)
+        finally:
+            # Clean up temporary files created by pdf_to_images
+            for img_path in images:
+                try:
+                    if img_path.exists() and str(img_path).startswith(tempfile.gettempdir()):
+                        img_path.unlink()
+                except Exception as e:
+                    logger.warning(f"Failed to clean up temporary file {img_path}: {e}")
+    return wrapper

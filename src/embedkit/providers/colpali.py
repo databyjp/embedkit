@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from ..utils import pdf_to_images, image_to_base64
+from ..utils import image_to_base64, with_pdf_cleanup
 from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResponse, EmbeddingObject
 
 logger = logging.getLogger(__name__)
@@ -164,5 +164,9 @@ class ColPaliProvider(EmbeddingProvider):
 
     def embed_pdf(self, pdf_path: Path) -> EmbeddingResponse:
         """Generate embeddings for a PDF file using ColPali API."""
-        images = pdf_to_images(pdf_path)
-        return self.embed_image(images)
+        return self._embed_pdf_impl(pdf_path)
+
+    @with_pdf_cleanup
+    def _embed_pdf_impl(self, pdf_path: List[Path]) -> EmbeddingResponse:
+        """Internal implementation of PDF embedding with cleanup handled by decorator."""
+        return self.embed_image(pdf_path)

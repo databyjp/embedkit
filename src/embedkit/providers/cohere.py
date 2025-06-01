@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from enum import Enum
 
-from ..utils import pdf_to_images, image_to_base64
+from ..utils import image_to_base64, with_pdf_cleanup
 from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResponse, EmbeddingObject
 
 
@@ -144,5 +144,9 @@ class CohereProvider(EmbeddingProvider):
 
     def embed_pdf(self, pdf_path: Path) -> EmbeddingResponse:
         """Generate embeddings for a PDF file using Cohere API."""
-        image_paths = pdf_to_images(pdf_path)
-        return self.embed_image(image_paths)
+        return self._embed_pdf_impl(pdf_path)
+
+    @with_pdf_cleanup
+    def _embed_pdf_impl(self, pdf_path: List[Path]) -> EmbeddingResponse:
+        """Internal implementation of PDF embedding with cleanup handled by decorator."""
+        return self.embed_image(pdf_path)
