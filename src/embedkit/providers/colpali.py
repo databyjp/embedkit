@@ -48,16 +48,28 @@ class ColPaliProvider(EmbeddingProvider):
         """Lazy load the model."""
         if self._model is None:
             try:
-                from colpali_engine.models import ColPali, ColPaliProcessor
+                if self.model_name == "vidore/colpali-v1.3":
+                    from colpali_engine.models import ColPali, ColPaliProcessor
 
-                self._model = ColPali.from_pretrained(
-                    self.model_name,
-                    torch_dtype=torch.bfloat16,
-                    device_map=self.device,
-                ).eval()
+                    self._model = ColPali.from_pretrained(
+                        self.model_name,
+                        torch_dtype=torch.bfloat16,
+                        device_map=self.device,
+                    ).eval()
 
-                self._processor = ColPaliProcessor.from_pretrained(self.model_name)
-                logger.info(f"Loaded ColPali model on {self.device}")
+                    self._processor = ColPaliProcessor.from_pretrained(self.model_name)
+
+                elif self.model_name == "vidore/colSmol-256M":
+                    from colpali_engine.models import ColIdefics3, ColIdefics3Processor
+
+                    self._model = ColIdefics3.from_pretrained(
+                            self.model_name,
+                            torch_dtype=torch.bfloat16,
+                            device_map=self.device,
+                        ).eval()
+                    self._processor = ColIdefics3Processor.from_pretrained(self.model_name)
+
+                logger.info(f"Loaded {self.model_name} on {self.device}")
 
             except ImportError as e:
                 raise EmbeddingError(

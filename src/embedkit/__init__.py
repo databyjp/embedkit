@@ -27,7 +27,7 @@ class EmbedKit:
     @classmethod
     def colpali(
         cls,
-        model: Model = Model.ColPali.V1_3,
+        model: Model = Model.ColPali.COLPALI_V1_3,
         device: Optional[str] = None,
         text_batch_size: int = 32,
         image_batch_size: int = 8,
@@ -41,8 +41,10 @@ class EmbedKit:
             text_batch_size: Batch size for text embedding generation
             image_batch_size: Batch size for image embedding generation
         """
-        if model == Model.ColPali.V1_3:
+        if model == Model.ColPali.COLPALI_V1_3:
             model_name = "vidore/colpali-v1.3"
+        elif model == Model.ColPali.COLSMOL_256M:
+            model_name = "vidore/colSmol-256M"
         else:
             raise ValueError(f"Unsupported model: {model}")
 

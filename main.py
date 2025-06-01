@@ -75,7 +75,29 @@ assert len(results.objects) == 5
 assert len(results.objects[0].embedding.shape) == 1
 assert type(results.objects[0].source_b64) == str
 
-kit = EmbedKit.colpali(model=Model.ColPali.V1_3, text_batch_size=16, image_batch_size=8)
+kit = EmbedKit.colpali(model=Model.ColPali.COLSMOL_256M, text_batch_size=16, image_batch_size=8)
+
+results = kit.embed_text("Hello world")
+assert len(results.objects) == 1
+assert len(results.objects[0].embedding.shape) == 2
+assert results.objects[0].source_b64 == None
+
+results = kit.embed_image(sample_image)
+assert len(results.objects) == 1
+assert len(results.objects[0].embedding.shape) == 2
+assert type(results.objects[0].source_b64) == str
+
+results = kit.embed_pdf(sample_pdf)
+assert len(results.objects) == 1
+assert len(results.objects[0].embedding.shape) == 2
+assert type(results.objects[0].source_b64) == str
+
+results = kit.embed_pdf(longer_pdf)
+assert len(results.objects) == 5
+assert len(results.objects[0].embedding.shape) == 2
+assert type(results.objects[0].source_b64) == str
+
+kit = EmbedKit.colpali(model=Model.ColPali.COLPALI_V1_3, text_batch_size=16, image_batch_size=8)
 
 results = kit.embed_text("Hello world")
 assert len(results.objects) == 1

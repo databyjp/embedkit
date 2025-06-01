@@ -349,7 +349,7 @@ wheels = [
 
 [[package]]
 name = "embedkit"
-version = "0.1.0"
+version = "0.1.5"
 source = { editable = "." }
 dependencies = [
     { name = "accelerate" },
@@ -377,7 +377,7 @@ requires-dist = [
     { name = "pdf2image", specifier = ">=1.17.0" },
     { name = "pillow", specifier = ">=11.2.1" },
     { name = "torch", specifier = "<=2.5" },
-    { name = "transformers" },
+    { name = "transformers", specifier = ">=4.46.2" },
 ]
 
 [package.metadata.requires-dev]

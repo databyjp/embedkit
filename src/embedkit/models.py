@@ -6,7 +6,8 @@ from enum import Enum
 
 class Model:
     class ColPali(Enum):
-        V1_3 = "colpali-v1.3"
+        COLPALI_V1_3 = "colpali-v1.3"
+        COLSMOL_256M = "colsmol-256m"
 
     class Cohere(Enum):
         EMBED_V4_0 = "embed-v4.0"

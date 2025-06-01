@@ -114,7 +114,7 @@ def test_cohere_missing_api_key():
 # ===============================
 def test_colpali_text_embedding():
     """Test text embedding with Colpali model."""
-    kit = EmbedKit.colpali(model=Model.ColPali.V1_3)
+    kit = EmbedKit.colpali(model=Model.ColPali.COLPALI_V1_3)
     result = kit.embed_text("Hello world")
 
     assert len(result.objects) == 1
@@ -133,7 +133,7 @@ def test_colpali_text_embedding():
 )
 def test_colpali_file_embedding(request, embed_method, file_fixture):
     """Test file embedding with Colpali model."""
-    kit = EmbedKit.colpali(model=Model.ColPali.V1_3)
+    kit = EmbedKit.colpali(model=Model.ColPali.COLPALI_V1_3)
     file_path = request.getfixturevalue(file_fixture)
     embed_func = getattr(kit, embed_method)
     result = embed_func(file_path)
