@@ -12,5 +12,5 @@ class Model:
         EMBED_V4_0 = "embed-v4.0"
         EMBED_ENGLISH_V3_0 = "embed-english-v3.0"
         EMBED_ENGLISH_LIGHT_V3_0 = "embed-english-light-v3.0"
-        EMBED_MULTILINGUAL_LIGHT_V3_0 = "embed-multilingual-v3.0"
+        EMBED_MULTILINGUAL_V3_0 = "embed-multilingual-v3.0"
         EMBED_MULTILINGUAL_LIGHT_V3_0 = "embed-multilingual-light-v3.0"

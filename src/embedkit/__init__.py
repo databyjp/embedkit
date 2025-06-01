@@ -5,7 +5,6 @@ EmbedKit: A unified toolkit for generating vector embeddings.
 
 from typing import Union, List, Optional
 from pathlib import Path
-import numpy as np
 
 from .models import Model
 from .base import EmbeddingError, EmbeddingResponse
@@ -77,14 +76,12 @@ class EmbedKit:
         if not api_key:
             raise ValueError("API key is required")
 
-        if model == Model.Cohere.EMBED_V4_0:
-            model_name = "embed-v4.0"
-        else:
+        if not isinstance(model, Model.Cohere):
             raise ValueError(f"Unsupported model: {model}")
 
         provider = CohereProvider(
             api_key=api_key,
-            model_name=model_name,
+            model_name=model.value,
             text_batch_size=text_batch_size,
             image_batch_size=image_batch_size,
             text_input_type=text_input_type,
