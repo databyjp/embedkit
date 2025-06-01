@@ -37,7 +37,8 @@ class EmbedKit:
         if model == Model.COLPALI_V1_3:
             model_name = "vidore/colpali-v1.3"
         else:
-            raise ValueError(f"Unsupported ColPali model: {model}")
+            raise ValueError(f"Unsupported model: {model}")
+
 
         provider = ColPaliProvider(model_name=model_name, device=device)
         return cls(provider)
@@ -60,8 +61,13 @@ class EmbedKit:
         if not api_key:
             raise ValueError("API key is required")
 
+        if model == Model.COHERE_V4_0:
+            model_name = "embed-v4.0"
+        else:
+            raise ValueError(f"Unsupported model: {model}")
+
         provider = CohereProvider(
-            api_key=api_key, model_name=model.value, text_input_type=text_input_type
+            api_key=api_key, model_name=model_name, text_input_type=text_input_type
         )
         return cls(provider)
 

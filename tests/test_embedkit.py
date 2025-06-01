@@ -85,7 +85,10 @@ def test_cohere_search_document_file_embedding(
 def test_cohere_invalid_model():
     """Test that invalid model raises appropriate error."""
     with pytest.raises(ValueError):
-        EmbedKit.cohere(model="invalid_model")
+        EmbedKit.cohere(
+            model="invalid_model",
+            api_key=os.getenv("COHERE_API_KEY"),
+        )
 
 
 def test_cohere_missing_api_key():
