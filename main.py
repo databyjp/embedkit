@@ -1,7 +1,6 @@
 # ./main.py
 from embedkit import EmbedKit
-from embedkit.models import Model
-from embedkit.providers.cohere import CohereInputType
+from embedkit.classes import Model, CohereInputType
 from pathlib import Path
 import os
 
