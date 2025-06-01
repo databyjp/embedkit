@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from enum import Enum
 
-from ..utils import image_to_base64, with_pdf_cleanup
+from ..utils import image_to_base64
 from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResponse, EmbeddingObject
 
 
@@ -28,13 +28,15 @@ class CohereProvider(EmbeddingProvider):
         image_batch_size: int,
         text_input_type: CohereInputType = CohereInputType.SEARCH_DOCUMENT,
     ):
+        super().__init__(
+            model_name=model_name,
+            text_batch_size=text_batch_size,
+            image_batch_size=image_batch_size,
+            provider_name="Cohere",
+        )
         self.api_key = api_key
-        self.model_name = model_name
-        self.text_batch_size = text_batch_size
-        self.image_batch_size = image_batch_size
         self.input_type = text_input_type
         self._client = None
-        self.provider_name = "Cohere"
 
     def _get_client(self):
         """Lazy load the Cohere client."""
@@ -54,9 +56,7 @@ class CohereProvider(EmbeddingProvider):
     def embed_text(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
         """Generate text embeddings using the Cohere API."""
         client = self._get_client()
-
-        if isinstance(texts, str):
-            texts = [texts]
+        texts = self._normalize_text_input(texts)
 
         try:
             all_embeddings = []
@@ -72,17 +72,7 @@ class CohereProvider(EmbeddingProvider):
                 )
                 all_embeddings.extend(np.array(response.embeddings.float_))
 
-            return EmbeddingResponse(
-                model_name=self.model_name,
-                model_provider=self.provider_name,
-                input_type=self.input_type.value,
-                objects=[
-                    EmbeddingObject(
-                        embedding=e,
-                    )
-                    for e in all_embeddings
-                ],
-            )
+            return self._create_text_response(all_embeddings, self.input_type.value)
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed text with Cohere: {e}") from e
@@ -93,12 +83,7 @@ class CohereProvider(EmbeddingProvider):
     ) -> EmbeddingResponse:
         """Generate embeddings for images using Cohere API."""
         client = self._get_client()
-        input_type = "image"
-
-        if isinstance(images, (str, Path)):
-            images = [Path(images)]
-        else:
-            images = [Path(img) for img in images]
+        images = self._normalize_image_input(images)
 
         try:
             all_embeddings = []
@@ -127,30 +112,11 @@ class CohereProvider(EmbeddingProvider):
 
                 all_embeddings.extend(np.array(response.embeddings.float_))
 
-            return EmbeddingResponse(
-                model_name=self.model_name,
-                model_provider=self.provider_name,
-                input_type=input_type,
-                objects=[
-                    EmbeddingObject(
-                        embedding=embedding,
-                        source_b64=b64_data,
-                        source_content_type=content_type,
-                    )
-                    for embedding, (b64_data, content_type) in zip(
-                        all_embeddings, all_b64_images
-                    )
-                ],
+            return self._create_image_response(
+                all_embeddings,
+                [b64 for b64, _ in all_b64_images],
+                [content_type for _, content_type in all_b64_images],
             )
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed image with Cohere: {e}") from e
-
-    def embed_pdf(self, pdf_path: Path) -> EmbeddingResponse:
-        """Generate embeddings for a PDF file using Cohere API."""
-        return self._embed_pdf_impl(pdf_path)
-
-    @with_pdf_cleanup
-    def _embed_pdf_impl(self, pdf_path: List[Path]) -> EmbeddingResponse:
-        """Internal implementation of PDF embedding with cleanup handled by decorator."""
-        return self.embed_image(pdf_path)

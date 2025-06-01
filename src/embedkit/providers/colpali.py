@@ -8,8 +8,8 @@ import numpy as np
 import torch
 from PIL import Image
 
-from ..utils import image_to_base64, with_pdf_cleanup
-from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResponse, EmbeddingObject
+from ..utils import image_to_base64
+from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResponse
 
 logger = logging.getLogger(__name__)
 
@@ -24,10 +24,12 @@ class ColPaliProvider(EmbeddingProvider):
         image_batch_size: int,
         device: Optional[str] = None,
     ):
-        self.model_name = model_name
-        self.provider_name = "ColPali"
-        self.text_batch_size = text_batch_size
-        self.image_batch_size = image_batch_size
+        super().__init__(
+            model_name=model_name,
+            text_batch_size=text_batch_size,
+            image_batch_size=image_batch_size,
+            provider_name="ColPali",
+        )
 
         # Auto-detect device
         if device is None:
@@ -64,16 +66,14 @@ class ColPaliProvider(EmbeddingProvider):
             except Exception as e:
                 raise EmbeddingError(f"Failed to load model: {e}") from e
 
-    def embed_text(self, texts: Union[str, List[str]]) -> EmbeddingResponse:
+    def embed_text(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
         """Generate embeddings for text inputs."""
         self._load_model()
-
-        if isinstance(texts, str):
-            texts = [texts]
+        texts = self._normalize_text_input(texts)
 
         try:
             # Process texts in batches
-            all_embeddings = []
+            all_embeddings: List[np.ndarray] = []
 
             for i in range(0, len(texts), self.text_batch_size):
                 batch_texts = texts[i : i + self.text_batch_size]
@@ -85,18 +85,7 @@ class ColPaliProvider(EmbeddingProvider):
 
             # Concatenate all batch embeddings
             final_embeddings = np.concatenate(all_embeddings, axis=0)
-
-            return EmbeddingResponse(
-                model_name=self.model_name,
-                model_provider=self.provider_name,
-                input_type="text",
-                objects=[
-                    EmbeddingObject(
-                        embedding=e,
-                    )
-                    for e in final_embeddings
-                ],
-            )
+            return self._create_text_response(final_embeddings)
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed text: {e}") from e
@@ -106,17 +95,13 @@ class ColPaliProvider(EmbeddingProvider):
     ) -> EmbeddingResponse:
         """Generate embeddings for images."""
         self._load_model()
-
-        if isinstance(images, (str, Path)):
-            images = [Path(images)]
-        else:
-            images = [Path(img) for img in images]
+        images = self._normalize_image_input(images)
 
         try:
             # Process images in batches
-            all_embeddings = []
-            all_b64_data = []
-            all_content_types = []
+            all_embeddings: List[np.ndarray] = []
+            all_b64_data: List[str] = []
+            all_content_types: List[str] = []
 
             for i in range(0, len(images), self.image_batch_size):
                 batch_images = images[i : i + self.image_batch_size]
@@ -144,31 +129,9 @@ class ColPaliProvider(EmbeddingProvider):
 
             # Concatenate all batch embeddings
             final_embeddings = np.concatenate(all_embeddings, axis=0)
-
-            return EmbeddingResponse(
-                model_name=self.model_name,
-                model_provider=self.provider_name,
-                input_type="image",
-                objects=[
-                    EmbeddingObject(
-                        embedding=embedding,
-                        source_b64=b64_data,
-                        source_content_type=content_type,
-                    )
-                    for embedding, b64_data, content_type in zip(
-                        final_embeddings, all_b64_data, all_content_types
-                    )
-                ],
+            return self._create_image_response(
+                final_embeddings, all_b64_data, all_content_types
             )
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed images: {e}") from e
-
-    def embed_pdf(self, pdf_path: Path) -> EmbeddingResponse:
-        """Generate embeddings for a PDF file using ColPali API."""
-        return self._embed_pdf_impl(pdf_path)
-
-    @with_pdf_cleanup
-    def _embed_pdf_impl(self, pdf_path: List[Path]) -> EmbeddingResponse:
-        """Internal implementation of PDF embedding with cleanup handled by decorator."""
-        return self.embed_image(pdf_path)
