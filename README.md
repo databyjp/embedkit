@@ -18,7 +18,7 @@ from embedkit.classes import Model, CohereInputType
 
 # Initialize with ColPali
 kit = EmbedKit.colpali(
-    model=Model.ColPali.V1_3,
+    model=Model.ColPali.COLPALI_V1_3,  # or COLSMOL_256M, COLSMOL_500M
     text_batch_size=16,  # Optional: process text in batches of 16
     image_batch_size=8,  # Optional: process images in batches of 8
 )
@@ -27,7 +27,7 @@ kit = EmbedKit.colpali(
 result = kit.embed_text("Hello world")
 print(result.model_provider)
 print(result.input_type)
-print(result.objects[0].embedding.shape)
+print(result.objects[0].embedding.shape)  # Returns 2D array for ColPali
 print(result.objects[0].source_b64)
 
 # Initialize with Cohere
@@ -43,7 +43,7 @@ kit = EmbedKit.cohere(
 result = kit.embed_text("Hello world")
 print(result.model_provider)
 print(result.input_type)
-print(result.objects[0].embedding.shape)
+print(result.objects[0].embedding.shape)  # Returns 1D array for Cohere
 print(result.objects[0].source_b64)
 ```
 
@@ -58,8 +58,8 @@ result = kit.embed_image(image_path)
 
 print(result.model_provider)
 print(result.input_type)
-print(result.objects[0].embedding.shape)
-print(result.objects[0].source_b64)
+print(result.objects[0].embedding.shape)  # 2D for ColPali, 1D for Cohere
+print(result.objects[0].source_b64)  # Base64 encoded image
 ```
 
 ### PDF Embeddings
@@ -73,8 +73,8 @@ result = kit.embed_pdf(pdf_path)
 
 print(result.model_provider)
 print(result.input_type)
-print(result.objects[0].embedding.shape)
-print(result.objects[0].source_b64)
+print(result.objects[0].embedding.shape)  # 2D for ColPali, 1D for Cohere
+print(result.objects[0].source_b64)  # Base64 encoded PDF page
 ```
 
 ## Response Format
@@ -89,17 +89,23 @@ class EmbeddingResponse:
     objects: List[EmbeddingObject]
 
 class EmbeddingObject:
-    embedding: np.ndarray
-    source_b64: Optional[str]
+    embedding: np.ndarray  # 1D array for Cohere, 2D array for ColPali
+    source_b64: Optional[str]  # Base64 encoded source for images and PDFs
 ```
 
 ## Supported Models
 
 ### ColPali
-- `Model.ColPali.V1_3`
+- `Model.ColPali.COLPALI_V1_3`
+- `Model.ColPali.COLSMOL_256M`
+- `Model.ColPali.COLSMOL_500M`
 
 ### Cohere
 - `Model.Cohere.EMBED_V4_0`
+- `Model.Cohere.EMBED_ENGLISH_V3_0`
+- `Model.Cohere.EMBED_ENGLISH_LIGHT_V3_0`
+- `Model.Cohere.EMBED_MULTILINGUAL_V3_0`
+- `Model.Cohere.EMBED_MULTILINGUAL_LIGHT_V3_0`
 
 ## Requirements
 
