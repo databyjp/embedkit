@@ -8,6 +8,7 @@ import numpy as np
 import torch
 from PIL import Image
 
+from ..models import Model
 from ..utils import image_to_base64
 from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResponse
 
@@ -19,13 +20,13 @@ class ColPaliProvider(EmbeddingProvider):
 
     def __init__(
         self,
-        model_name: str,
+        model: Model.ColPali,
         text_batch_size: int,
         image_batch_size: int,
         device: Optional[str] = None,
     ):
         super().__init__(
-            model_name=model_name,
+            model_name=model.value,
             text_batch_size=text_batch_size,
             image_batch_size=image_batch_size,
             provider_name="ColPali",
@@ -40,36 +41,43 @@ class ColPaliProvider(EmbeddingProvider):
             else:
                 device = "cpu"
 
-        self.device = device
-        self._model = None
-        self._processor = None
+        self._hf_device = device
+        self._hf_model = None
+        self._hf_processor = None
 
     def _load_model(self):
         """Lazy load the model."""
-        if self._model is None:
+        if self._hf_model is None:
             try:
-                if self.model_name == "vidore/colpali-v1.3":
+                if self.model_name in [Model.ColPali.COLPALI_V1_3.value]:
                     from colpali_engine.models import ColPali, ColPaliProcessor
 
-                    self._model = ColPali.from_pretrained(
+                    self._hf_model = ColPali.from_pretrained(
                         self.model_name,
                         torch_dtype=torch.bfloat16,
-                        device_map=self.device,
+                        device_map=self._hf_device,
                     ).eval()
 
-                    self._processor = ColPaliProcessor.from_pretrained(self.model_name)
+                    self._hf_processor = ColPaliProcessor.from_pretrained(self.model_name)
 
-                elif self.model_name == "vidore/colSmol-256M":
+                elif self.model_name in [
+                    Model.ColPali.COLSMOL_500M.value,
+                    Model.ColPali.COLSMOL_256M.value,
+                ]:
                     from colpali_engine.models import ColIdefics3, ColIdefics3Processor
 
-                    self._model = ColIdefics3.from_pretrained(
-                            self.model_name,
-                            torch_dtype=torch.bfloat16,
-                            device_map=self.device,
-                        ).eval()
-                    self._processor = ColIdefics3Processor.from_pretrained(self.model_name)
+                    self._hf_model = ColIdefics3.from_pretrained(
+                        self.model_name,
+                        torch_dtype=torch.bfloat16,
+                        device_map=self._hf_device,
+                    ).eval()
+                    self._hf_processor = ColIdefics3Processor.from_pretrained(
+                        self.model_name
+                    )
+                else:
+                    raise ValueError(f"Unable to load model for: {self.model_name}.")
 
-                logger.info(f"Loaded {self.model_name} on {self.device}")
+                logger.info(f"Loaded {self.model_name} on {self._hf_device}")
 
             except ImportError as e:
                 raise EmbeddingError(
@@ -89,10 +97,10 @@ class ColPaliProvider(EmbeddingProvider):
 
             for i in range(0, len(texts), self.text_batch_size):
                 batch_texts = texts[i : i + self.text_batch_size]
-                processed = self._processor.process_queries(batch_texts).to(self.device)
+                processed = self._hf_processor.process_queries(batch_texts).to(self._hf_device)
 
                 with torch.no_grad():
-                    batch_embeddings = self._model(**processed)
+                    batch_embeddings = self._hf_model(**processed)
                     all_embeddings.append(batch_embeddings.cpu().float().numpy())
 
             # Concatenate all batch embeddings
@@ -131,10 +139,10 @@ class ColPaliProvider(EmbeddingProvider):
                     batch_b64_data.append(b64)
                     batch_content_types.append(content_type)
 
-                processed = self._processor.process_images(pil_images).to(self.device)
+                processed = self._hf_processor.process_images(pil_images).to(self._hf_device)
 
                 with torch.no_grad():
-                    batch_embeddings = self._model(**processed)
+                    batch_embeddings = self._hf_model(**processed)
                     all_embeddings.append(batch_embeddings.cpu().float().numpy())
                     all_b64_data.extend(batch_b64_data)
                     all_content_types.extend(batch_content_types)

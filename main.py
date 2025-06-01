@@ -42,6 +42,7 @@ kit = EmbedKit.cohere(
     text_input_type=CohereInputType.SEARCH_QUERY,
 )
 
+print(f"Trying out Cohere")
 results = kit.embed_text("Hello world")
 assert len(results.objects) == 1
 assert len(results.objects[0].embedding.shape) == 1
@@ -75,46 +76,32 @@ assert len(results.objects) == 5
 assert len(results.objects[0].embedding.shape) == 1
 assert type(results.objects[0].source_b64) == str
 
-kit = EmbedKit.colpali(model=Model.ColPali.COLSMOL_256M, text_batch_size=16, image_batch_size=8)
+for colpali_model in [
+    Model.ColPali.COLSMOL_256M,
+    Model.ColPali.COLSMOL_500M,
+    Model.ColPali.COLPALI_V1_3,
+]:
+    print(f"Trying out {colpali_model}")
+    kit = EmbedKit.colpali(
+        model=colpali_model, text_batch_size=16, image_batch_size=8
+    )
 
-results = kit.embed_text("Hello world")
-assert len(results.objects) == 1
-assert len(results.objects[0].embedding.shape) == 2
-assert results.objects[0].source_b64 == None
+    results = kit.embed_text("Hello world")
+    assert len(results.objects) == 1
+    assert len(results.objects[0].embedding.shape) == 2
+    assert results.objects[0].source_b64 == None
 
-results = kit.embed_image(sample_image)
-assert len(results.objects) == 1
-assert len(results.objects[0].embedding.shape) == 2
-assert type(results.objects[0].source_b64) == str
+    results = kit.embed_image(sample_image)
+    assert len(results.objects) == 1
+    assert len(results.objects[0].embedding.shape) == 2
+    assert type(results.objects[0].source_b64) == str
 
-results = kit.embed_pdf(sample_pdf)
-assert len(results.objects) == 1
-assert len(results.objects[0].embedding.shape) == 2
-assert type(results.objects[0].source_b64) == str
+    results = kit.embed_pdf(sample_pdf)
+    assert len(results.objects) == 1
+    assert len(results.objects[0].embedding.shape) == 2
+    assert type(results.objects[0].source_b64) == str
 
-results = kit.embed_pdf(longer_pdf)
-assert len(results.objects) == 5
-assert len(results.objects[0].embedding.shape) == 2
-assert type(results.objects[0].source_b64) == str
-
-kit = EmbedKit.colpali(model=Model.ColPali.COLPALI_V1_3, text_batch_size=16, image_batch_size=8)
-
-results = kit.embed_text("Hello world")
-assert len(results.objects) == 1
-assert len(results.objects[0].embedding.shape) == 2
-assert results.objects[0].source_b64 == None
-
-results = kit.embed_image(sample_image)
-assert len(results.objects) == 1
-assert len(results.objects[0].embedding.shape) == 2
-assert type(results.objects[0].source_b64) == str
-
-results = kit.embed_pdf(sample_pdf)
-assert len(results.objects) == 1
-assert len(results.objects[0].embedding.shape) == 2
-assert type(results.objects[0].source_b64) == str
-
-results = kit.embed_pdf(longer_pdf)
-assert len(results.objects) == 5
-assert len(results.objects[0].embedding.shape) == 2
-assert type(results.objects[0].source_b64) == str
+    results = kit.embed_pdf(longer_pdf)
+    assert len(results.objects) == 5
+    assert len(results.objects[0].embedding.shape) == 2
+    assert type(results.objects[0].source_b64) == str

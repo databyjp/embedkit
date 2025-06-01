@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 from enum import Enum
 
+from ..models import Model
 from ..utils import image_to_base64
 from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResponse, EmbeddingObject
 
@@ -23,13 +24,13 @@ class CohereProvider(EmbeddingProvider):
     def __init__(
         self,
         api_key: str,
-        model_name: str,
+        model: Model.Cohere,
         text_batch_size: int,
         image_batch_size: int,
         text_input_type: CohereInputType = CohereInputType.SEARCH_DOCUMENT,
     ):
         super().__init__(
-            model_name=model_name,
+            model_name=model.value,
             text_batch_size=text_batch_size,
             image_batch_size=image_batch_size,
             provider_name="Cohere",

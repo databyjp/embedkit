@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 from dataclasses import dataclass
 
+from .models import Model
 from .utils import with_pdf_cleanup
 
 

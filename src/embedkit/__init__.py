@@ -41,15 +41,13 @@ class EmbedKit:
             text_batch_size: Batch size for text embedding generation
             image_batch_size: Batch size for image embedding generation
         """
-        if model == Model.ColPali.COLPALI_V1_3:
-            model_name = "vidore/colpali-v1.3"
-        elif model == Model.ColPali.COLSMOL_256M:
-            model_name = "vidore/colSmol-256M"
-        else:
-            raise ValueError(f"Unsupported model: {model}")
+        if not isinstance(model, Model.ColPali):
+            raise ValueError(
+                f"Unsupported model: {model}. Must be a Model.ColPali enum value."
+            )
 
         provider = ColPaliProvider(
-            model_name=model_name,
+            model=model,
             device=device,
             text_batch_size=text_batch_size,
             image_batch_size=image_batch_size,
@@ -83,7 +81,7 @@ class EmbedKit:
 
         provider = CohereProvider(
             api_key=api_key,
-            model_name=model.value,
+            model=model,
             text_batch_size=text_batch_size,
             image_batch_size=image_batch_size,
             text_input_type=text_input_type,
