@@ -1,6 +1,6 @@
 # EmbedKit
 
-A Python library for generating embeddings from text and images using various models (Cohere, ColPali).
+A Python library for generating embeddings from text, images, and PDFs using various models (e.g. from Cohere, ColPali).
 
 ## Usage
 
@@ -10,10 +10,9 @@ See [main.py](main.py) for examples.
 from embedkit import EmbedKit
 from embedkit.models import Model
 
+# Instantiate a kit
 # Using ColPali
 kit = EmbedKit.colpali(model=Model.COLPALI_V1_3)
-embeddings = kit.embed_text("Hello world")
-embeddings = kit.embed_image("path/to/image.png")
 
 # Using Cohere
 kit = EmbedKit.cohere(
@@ -21,8 +20,11 @@ kit = EmbedKit.cohere(
     api_key="your_api_key",
     text_input_type=CohereInputType.SEARCH_DOCUMENT,
 )
-embeddings = kit.embed_text("Hello world")
-embeddings = kit.embed_image("path/to/image.png")
+
+# Then - the embedding API is consistent
+embeddings = kit.embed_text("Hello world") or kit.embed_text(["Hello world", "Hello world"])
+embeddings = kit.embed_image("path/to/image.png") or kit.embed_image(["path/to/image1.png", "path/to/image2.png"])
+embeddings = kit.embed_pdf("path/to/pdf.pdf")  # Single PDF only
 ```
 
 ## License
