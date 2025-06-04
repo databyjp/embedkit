@@ -249,11 +249,20 @@ def test_jina_missing_api_key():
 # ===============================
 @pytest.mark.snowflake
 @pytest.mark.parametrize(
-    "snowflake_kit_fixture", ["snowflake_kit_query", "snowflake_kit_document"]
+    "model,input_type",
+    [
+        (Model.Snowflake.ARCTIC_EMBED_M_V1_5, SnowflakeInputType.QUERY),
+        (Model.Snowflake.ARCTIC_EMBED_M_V1_5, SnowflakeInputType.DOCUMENT),
+        (Model.Snowflake.ARCTIC_EMBED_L_V2_0, SnowflakeInputType.QUERY),
+        (Model.Snowflake.ARCTIC_EMBED_L_V2_0, SnowflakeInputType.DOCUMENT),
+    ],
 )
-def test_snowflake_text_embedding(request, snowflake_kit_fixture):
+def test_snowflake_text_embedding(request, model, input_type):
     """Test text embedding with Snowflake models."""
-    kit = request.getfixturevalue(snowflake_kit_fixture)
+    kit = EmbedKit.snowflake(
+        model=model,
+        text_input_type=input_type,
+    )
     result = kit.embed_text("Hello world")
 
     assert len(result.objects) == 1

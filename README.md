@@ -14,7 +14,7 @@ pip install embedkit
 
 ```python
 from embedkit import EmbedKit
-from embedkit.classes import Model, CohereInputType
+from embedkit.classes import Model, CohereInputType, SnowflakeInputType
 
 # Initialize with ColPali
 kit = EmbedKit.colpali(
@@ -60,6 +60,20 @@ print(result.model_provider)
 print(result.input_type)
 print(result.objects[0].embedding.shape)  # Returns 1D array for Jina
 print(result.objects[0].source_b64)
+
+# Initialize with Snowflake
+kit = EmbedKit.snowflake(
+    model=Model.Snowflake.ARCTIC_EMBED_L_V2_0,  # or ARCTIC_EMBED_M_V1_5
+    text_input_type=SnowflakeInputType.QUERY,  # or DOCUMENT
+    text_batch_size=32,  # Optional: process text in batches of 32
+)
+
+# Get embeddings
+result = kit.embed_text("Hello world")
+print(result.model_provider)
+print(result.input_type)
+print(result.objects[0].embedding.shape)  # Returns 1D array for Snowflake
+print(result.objects[0].source_b64)
 ```
 
 ### Image Embeddings
@@ -104,7 +118,7 @@ class EmbeddingResponse:
     objects: List[EmbeddingObject]
 
 class EmbeddingObject:
-    embedding: np.ndarray  # 1D array for Cohere/Jina, 2D array for ColPali
+    embedding: np.ndarray  # 1D array for everything except ColPali
     source_b64: Optional[str]  # Base64 encoded source for images and PDFs
 ```
 
@@ -125,6 +139,10 @@ class EmbeddingObject:
 ### Jina
 - `Model.Jina.CLIP_V2`
 
+### Snowflake
+- `Model.Snowflake.ARCTIC_EMBED_L_V2_0` - Large model optimized for high accuracy
+- `Model.Snowflake.ARCTIC_EMBED_M_V1_5` - Medium model balanced for speed and accuracy
+
 ## Development
 
 ### Running Tests
@@ -139,6 +157,7 @@ pytest
 pytest -m cohere    # Run only Cohere tests
 pytest -m colpali   # Run only ColPali tests
 pytest -m jina      # Run only Jina tests
+pytest -m snowflake # Run only Snowflake tests
 
 # Run tests for multiple providers
 pytest -m "cohere or jina"

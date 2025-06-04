@@ -143,10 +143,12 @@ test_provider(kit, expected_dim=1)
 
 # Test Snowflake provider
 print("\n=== Testing Snowflake provider ===")
-for input_type in [SnowflakeInputType.QUERY, SnowflakeInputType.DOCUMENT]:
-    kit = EmbedKit.snowflake(
-        model=Model.Snowflake.ARCTIC_EMBED_M_V1_5,
-        text_batch_size=32,
-        text_input_type=input_type,
-    )
-    test_provider(kit, expected_dim=1, supports_images=False)
+for model in [Model.Snowflake.ARCTIC_EMBED_M_V1_5, Model.Snowflake.ARCTIC_EMBED_L_V2_0]:
+    print(f"\nTesting {model.value}...")
+    for input_type in [SnowflakeInputType.QUERY, SnowflakeInputType.DOCUMENT]:
+        kit = EmbedKit.snowflake(
+            model=model,
+            text_batch_size=32,
+            text_input_type=input_type,
+        )
+        test_provider(kit, expected_dim=1, supports_images=False)
