@@ -19,3 +19,6 @@ class Model:
 
     class Jina(Enum):
         CLIP_V2 = "jina-clip-v2"
+
+    class Snowflake(Enum):
+        ARCTIC_EMBED_M_V1_5 = "Snowflake/snowflake-arctic-embed-m-v1.5"
