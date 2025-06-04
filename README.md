@@ -8,107 +8,64 @@ A unified interface for text and image embeddings, supporting multiple providers
 pip install embedkit
 ```
 
-## Usage
-
-### Text Embeddings
+## Quick Start
 
 ```python
 from embedkit import EmbedKit
 from embedkit.classes import Model, CohereInputType, SnowflakeInputType
 
-# Initialize with ColPali
-kit = EmbedKit.colpali(
-    model=Model.ColPali.COLPALI_V1_3,  # or COLSMOL_256M, COLSMOL_500M
-    text_batch_size=16,  # Optional: process text in batches of 16
-    image_batch_size=8,  # Optional: process images in batches of 8
-)
-
-# Get embeddings
-result = kit.embed_text("Hello world")
-print(result.model_provider)
-print(result.input_type)
-print(result.objects[0].embedding.shape)  # Returns 2D array for ColPali
-print(result.objects[0].source_b64)
-
-# Initialize with Cohere
+# Initialize a provider
 kit = EmbedKit.cohere(
     model=Model.Cohere.EMBED_V4_0,
     api_key="your-api-key",
-    text_input_type=CohereInputType.SEARCH_QUERY,  # or SEARCH_DOCUMENT
-    text_batch_size=64,  # Optional: process text in batches of 64
-    image_batch_size=8,  # Optional: process images in batches of 8
+    text_input_type=CohereInputType.SEARCH_QUERY,
 )
 
-# Get embeddings
+# Get text embeddings
 result = kit.embed_text("Hello world")
-print(result.model_provider)
-print(result.input_type)
-print(result.objects[0].embedding.shape)  # Returns 1D array for Cohere
-print(result.objects[0].source_b64)
+print(result.objects[0].embedding.shape)  # 1D array
 
-# Initialize with Jina
-kit = EmbedKit.jina(
-    model=Model.Jina.CLIP_V2,
-    api_key="your-api-key",
-    text_batch_size=32,  # Optional: process text in batches of 32
-    image_batch_size=8,  # Optional: process images in batches of 8
-)
-
-# Get embeddings
-result = kit.embed_text("Hello world")
-print(result.model_provider)
-print(result.input_type)
-print(result.objects[0].embedding.shape)  # Returns 1D array for Jina
-print(result.objects[0].source_b64)
-
-# Initialize with Snowflake
-kit = EmbedKit.snowflake(
-    model=Model.Snowflake.ARCTIC_EMBED_L_V2_0,  # or ARCTIC_EMBED_M_V1_5
-    text_input_type=SnowflakeInputType.QUERY,  # or DOCUMENT
-    text_batch_size=32,  # Optional: process text in batches of 32
-)
-
-# Get embeddings
-result = kit.embed_text("Hello world")
-print(result.model_provider)
-print(result.input_type)
-print(result.objects[0].embedding.shape)  # Returns 1D array for Snowflake
-print(result.objects[0].source_b64)
-```
-
-### Image Embeddings
-
-```python
-from pathlib import Path
-
-# Get embeddings for an image
-image_path = Path("path/to/image.png")
-result = kit.embed_image(image_path)
-
-print(result.model_provider)
-print(result.input_type)
-print(result.objects[0].embedding.shape)  # 2D for ColPali, 1D for Cohere/Jina
+# Get image embeddings
+result = kit.embed_image("path/to/image.png")
+print(result.objects[0].embedding.shape)  # 1D array
 print(result.objects[0].source_b64)  # Base64 encoded image
 ```
 
-### PDF Embeddings
+## Supported Providers
 
+### Cohere
 ```python
-from pathlib import Path
+kit = EmbedKit.cohere(
+    model=Model.Cohere.EMBED_V4_0,  # or EMBED_ENGLISH_V3_0, EMBED_MULTILINGUAL_V3_0, etc.
+    api_key="your-api-key",
+    text_input_type=CohereInputType.SEARCH_QUERY,  # or SEARCH_DOCUMENT
+)
+```
 
-# Get embeddings for a PDF
-pdf_path = Path("path/to/document.pdf")
-result = kit.embed_pdf(pdf_path)
+### Snowflake
+```python
+kit = EmbedKit.snowflake(
+    model=Model.Snowflake.ARCTIC_EMBED_L_V2_0,  # or ARCTIC_EMBED_M_V1_5
+    text_input_type=SnowflakeInputType.QUERY,  # or DOCUMENT
+)
+```
 
-print(result.model_provider)
-print(result.input_type)
-print(result.objects[0].embedding.shape)  # 2D for ColPali, 1D for Cohere/Jina
-print(result.objects[0].source_b64)  # Base64 encoded PDF page
+### ColPali
+```python
+kit = EmbedKit.colpali(
+    model=Model.ColPali.COLPALI_V1_3,  # or COLSMOL_256M, COLSMOL_500M
+)
+```
+
+### Jina
+```python
+kit = EmbedKit.jina(
+    model=Model.Jina.CLIP_V2,
+    api_key="your-api-key",
+)
 ```
 
 ## Response Format
-
-The embedding methods return an `EmbeddingResponse` object with the following structure:
 
 ```python
 class EmbeddingResponse:
@@ -122,32 +79,9 @@ class EmbeddingObject:
     source_b64: Optional[str]  # Base64 encoded source for images and PDFs
 ```
 
-## Supported Models
-
-### ColPali
-- `Model.ColPali.COLPALI_V1_3`
-- `Model.ColPali.COLSMOL_256M`
-- `Model.ColPali.COLSMOL_500M`
-
-### Cohere
-- `Model.Cohere.EMBED_V4_0`
-- `Model.Cohere.EMBED_ENGLISH_V3_0`
-- `Model.Cohere.EMBED_ENGLISH_LIGHT_V3_0`
-- `Model.Cohere.EMBED_MULTILINGUAL_V3_0`
-- `Model.Cohere.EMBED_MULTILINGUAL_LIGHT_V3_0`
-
-### Jina
-- `Model.Jina.CLIP_V2`
-
-### Snowflake
-- `Model.Snowflake.ARCTIC_EMBED_L_V2_0` - Large model optimized for high accuracy
-- `Model.Snowflake.ARCTIC_EMBED_M_V1_5` - Medium model balanced for speed and accuracy
-
 ## Development
 
 ### Running Tests
-
-Tests are organized by provider and can be run selectively using pytest markers:
 
 ```bash
 # Run all tests
@@ -159,13 +93,7 @@ pytest -m colpali   # Run only ColPali tests
 pytest -m jina      # Run only Jina tests
 pytest -m snowflake # Run only Snowflake tests
 
-# Run tests for multiple providers
-pytest -m "cohere or jina"
-
-# Run all tests except a specific provider
-pytest -m "not cohere"
-
-# Additional pytest options
+# Additional options
 pytest -v           # Verbose output
 pytest -s           # Show print statements
 pytest -x           # Stop on first failure
