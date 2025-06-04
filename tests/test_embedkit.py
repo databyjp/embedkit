@@ -49,9 +49,20 @@ def cohere_kit_search_document():
     )
 
 
+# Jina fixtures
+@pytest.fixture
+def jina_kit():
+    """Fixture for Jina kit."""
+    return EmbedKit.jina(
+        model=Model.Jina.CLIP_V2,
+        api_key=os.getenv("JINAAI_API_KEY"),
+    )
+
+
 # ===============================
 # Cohere tests
 # ===============================
+@pytest.mark.cohere
 @pytest.mark.parametrize(
     "cohere_kit_fixture", ["cohere_kit_search_query", "cohere_kit_search_document"]
 )
@@ -67,6 +78,7 @@ def test_cohere_text_embedding(request, cohere_kit_fixture):
     assert result.input_type in ["search_query", "search_document"]
 
 
+@pytest.mark.cohere
 @pytest.mark.parametrize(
     "embed_method,file_fixture",
     [
@@ -90,6 +102,7 @@ def test_cohere_search_document_file_embedding(
         assert result.objects[0].source_b64 is not None
 
 
+@pytest.mark.cohere
 def test_cohere_invalid_model():
     """Test that invalid model raises appropriate error."""
     with pytest.raises(ValueError):
@@ -99,6 +112,7 @@ def test_cohere_invalid_model():
         )
 
 
+@pytest.mark.cohere
 def test_cohere_missing_api_key():
     """Test that missing API key raises appropriate error."""
     with pytest.raises(ValueError):
@@ -112,6 +126,7 @@ def test_cohere_missing_api_key():
 # ===============================
 # ColPali tests
 # ===============================
+@pytest.mark.colpali
 def test_colpali_text_embedding():
     """Test text embedding with Colpali model."""
     kit = EmbedKit.colpali(model=Model.ColPali.COLPALI_V1_3)
@@ -124,6 +139,7 @@ def test_colpali_text_embedding():
     assert result.input_type == "text"
 
 
+@pytest.mark.colpali
 @pytest.mark.parametrize(
     "embed_method,file_fixture",
     [
@@ -145,7 +161,64 @@ def test_colpali_file_embedding(request, embed_method, file_fixture):
     assert result.input_type == "image"
 
 
+@pytest.mark.colpali
 def test_colpali_invalid_model():
     """Test that invalid model raises appropriate error."""
     with pytest.raises(ValueError):
         EmbedKit.colpali(model="invalid_model")
+
+
+# ===============================
+# Jina tests
+# ===============================
+@pytest.mark.jina
+def test_jina_text_embedding(jina_kit):
+    """Test text embedding with Jina model."""
+    result = jina_kit.embed_text("Hello world")
+
+    assert len(result.objects) == 1
+    assert len(result.objects[0].embedding.shape) == 1
+    assert result.objects[0].source_b64 is None
+    assert result.model_provider == "Jina"
+    assert result.input_type == "text"
+
+
+@pytest.mark.jina
+@pytest.mark.parametrize(
+    "embed_method,file_fixture",
+    [
+        ("embed_image", "sample_image_path"),
+        ("embed_pdf", "sample_pdf_path"),
+    ],
+)
+def test_jina_file_embedding(request, embed_method, file_fixture, jina_kit):
+    """Test file embedding with Jina model."""
+    file_path = request.getfixturevalue(file_fixture)
+    embed_func = getattr(jina_kit, embed_method)
+    result = embed_func(file_path)
+
+    assert len(result.objects) == 1
+    assert len(result.objects[0].embedding.shape) == 1
+    assert isinstance(result.objects[0].source_b64, str)
+    assert result.model_provider == "Jina"
+    assert result.input_type == "image"
+
+
+@pytest.mark.jina
+def test_jina_invalid_model():
+    """Test that invalid model raises appropriate error."""
+    with pytest.raises(ValueError):
+        EmbedKit.jina(
+            model="invalid_model",
+            api_key=os.getenv("JINAAI_API_KEY"),
+        )
+
+
+@pytest.mark.jina
+def test_jina_missing_api_key():
+    """Test that missing API key raises appropriate error."""
+    with pytest.raises(ValueError):
+        EmbedKit.jina(
+            model=Model.Jina.CLIP_V2,
+            api_key=None,
+        )
