@@ -16,3 +16,6 @@ class Model:
         EMBED_ENGLISH_LIGHT_V3_0 = "embed-english-light-v3.0"
         EMBED_MULTILINGUAL_V3_0 = "embed-multilingual-v3.0"
         EMBED_MULTILINGUAL_LIGHT_V3_0 = "embed-multilingual-light-v3.0"
+
+    class Jina(Enum):
+        CLIP_V2 = "jina-clip-v2"

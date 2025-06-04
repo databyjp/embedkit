@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .models import Model
 from .base import EmbeddingError, EmbeddingResponse
-from .providers import ColPaliProvider, CohereProvider
+from .providers import ColPaliProvider, CohereProvider, JinaProvider
 from .providers.cohere import CohereInputType
 
 
@@ -85,6 +85,37 @@ class EmbedKit:
             text_batch_size=text_batch_size,
             image_batch_size=image_batch_size,
             text_input_type=text_input_type,
+        )
+        return cls(provider)
+
+    @classmethod
+    def jina(
+        cls,
+        api_key: str,
+        model: Model = Model.Jina.CLIP_V2,
+        text_batch_size: int = 32,
+        image_batch_size: int = 8,
+    ):
+        """
+        Create EmbedKit instance with Jina provider.
+
+        Args:
+            api_key: Jina API key
+            model: Jina model enum
+            text_batch_size: Batch size for text embedding generation
+            image_batch_size: Batch size for image embedding generation
+        """
+        if not api_key:
+            raise ValueError("API key is required")
+
+        if not isinstance(model, Model.Jina):
+            raise ValueError(f"Unsupported model: {model}")
+
+        provider = JinaProvider(
+            api_key=api_key,
+            model=model,
+            text_batch_size=text_batch_size,
+            image_batch_size=image_batch_size,
         )
         return cls(provider)
 

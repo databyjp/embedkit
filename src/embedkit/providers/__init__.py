@@ -3,5 +3,6 @@
 
 from .colpali import ColPaliProvider
 from .cohere import CohereProvider
+from .jina import JinaProvider
 
-__all__ = ["ColPaliProvider", "CohereProvider"]
+__all__ = ["ColPaliProvider", "CohereProvider", "JinaProvider"]
