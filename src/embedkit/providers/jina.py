@@ -65,6 +65,7 @@ class JinaProvider(EmbeddingProvider):
             # Process texts in batches
             for i in range(0, len(texts), self.text_batch_size):
                 batch_texts = texts[i : i + self.text_batch_size]
+                # Format each text input as a dict with "text" key
                 inputs = [{"text": text} for text in batch_texts]
                 batch_embeddings = self._make_request(inputs)
                 all_embeddings.extend(batch_embeddings)
@@ -97,9 +98,8 @@ class JinaProvider(EmbeddingProvider):
                     if not image.exists():
                         raise EmbeddingError(f"Image not found: {image}")
                     b64_data, content_type = image_to_base64(image)
-                    # Construct full data URI for API
-                    data_uri = f"data:{content_type};base64,{b64_data}"
-                    inputs.append({"image": data_uri})
+                    # For Jina API, we need to send the base64 data directly without the data URI prefix
+                    inputs.append({"image": b64_data})
                     all_b64_images.append((b64_data, content_type))
 
                 batch_embeddings = self._make_request(inputs)
