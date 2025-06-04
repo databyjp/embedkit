@@ -106,3 +106,7 @@ pytest -x           # Stop on first failure
 ## License
 
 MIT
+
+## GitHub
+
+https://github.com/databyjp/embedkit

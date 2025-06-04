@@ -1,6 +1,6 @@
 [project]
 name = "embedkit"
-version = "0.1.7"
+version = "0.1.8"
 description = "A simple toolkit for generating vector embeddings across multiple providers and models"
 readme = "README.md"
 requires-python = ">=3.10"
