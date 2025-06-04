@@ -40,6 +40,7 @@ class SnowflakeProvider(EmbeddingProvider):
         self._device = device
         self._model = None
         self.input_type = text_input_type
+        self._supports_image_embeddings = False  # Arctic models do not support image embeddings
 
     def _load_model(self):
         """Lazy load the model."""

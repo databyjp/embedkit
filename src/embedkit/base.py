@@ -44,6 +44,17 @@ class EmbeddingProvider(ABC):
         self.provider_name = provider_name
         self.text_batch_size = text_batch_size
         self.image_batch_size = image_batch_size
+        self._supports_image_embeddings = True  # Default to True, override in subclasses that don't support image embeddings
+
+    @property
+    def supports_image_embeddings(self) -> bool:
+        """Whether this provider supports image embeddings.
+
+        This property should be overridden to return False in providers that don't support
+        image embeddings (like Snowflake). Providers that support image embeddings can
+        leave this as the default True value.
+        """
+        return self._supports_image_embeddings
 
     def _normalize_text_input(self, texts: Union[str, List[str]]) -> List[str]:
         """Normalize text input to a list of strings."""
@@ -108,6 +119,11 @@ class EmbeddingProvider(ABC):
 
     def embed_pdf(self, pdf_path: Path) -> EmbeddingResponse:
         """Generate embeddings for a PDF file."""
+        if not self.supports_image_embeddings:
+            raise EmbeddingError(
+                f"{self.provider_name} provider does not support image embeddings, "
+                "which are required for PDF processing"
+            )
         return self._embed_pdf_impl(pdf_path)
 
     @with_pdf_cleanup
