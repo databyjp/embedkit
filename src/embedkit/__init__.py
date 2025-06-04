@@ -10,6 +10,7 @@ from .models import Model
 from .base import EmbeddingError, EmbeddingResponse
 from .providers import ColPaliProvider, CohereProvider, JinaProvider, SnowflakeProvider
 from .providers.cohere import CohereInputType
+from .providers.snowflake import SnowflakeInputType
 
 
 class EmbedKit:
@@ -126,6 +127,7 @@ class EmbedKit:
         text_batch_size: int = 32,
         image_batch_size: int = 8,
         device: Optional[str] = None,
+        text_input_type: SnowflakeInputType = SnowflakeInputType.QUERY,
     ):
         """
         Create EmbedKit instance with Snowflake provider.
@@ -135,6 +137,7 @@ class EmbedKit:
             text_batch_size: Batch size for text embedding generation
             image_batch_size: Batch size for image embedding generation (not used)
             device: Device to run on ('cuda', 'mps', 'cpu', or None for auto-detect)
+            text_input_type: Type of input for embedding (query or document)
         """
         if not isinstance(model, Model.Snowflake):
             raise ValueError(f"Unsupported model: {model}")
@@ -144,6 +147,7 @@ class EmbedKit:
             text_batch_size=text_batch_size,
             image_batch_size=image_batch_size,
             device=device,
+            text_input_type=text_input_type,
         )
         return cls(provider)
 

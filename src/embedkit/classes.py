@@ -12,5 +12,6 @@ This module provides the main types and enums that users should interact with:
 from . import EmbeddingResponse, EmbeddingError
 from .models import Model
 from .providers.cohere import CohereInputType
+from .providers.snowflake import SnowflakeInputType
 
-__all__ = ["EmbeddingResponse", "EmbeddingError", "Model", "CohereInputType"]
+__all__ = ["EmbeddingResponse", "EmbeddingError", "Model", "CohereInputType", "SnowflakeInputType"]

@@ -1,6 +1,6 @@
 # ./main.py
 from embedkit import EmbedKit
-from embedkit.classes import Model, CohereInputType
+from embedkit.classes import Model, CohereInputType, SnowflakeInputType
 from pathlib import Path
 import os
 import numpy as np
@@ -143,9 +143,10 @@ test_provider(kit, expected_dim=1)
 
 # Test Snowflake provider
 print("\n=== Testing Snowflake provider ===")
-kit = EmbedKit.snowflake(
-    model=Model.Snowflake.ARCTIC_EMBED_M_V1_5,
-    text_batch_size=32,
-    device="cuda" if os.getenv("CUDA_VISIBLE_DEVICES") else None,
-)
-test_provider(kit, expected_dim=1, supports_images=False)
+for input_type in [SnowflakeInputType.QUERY, SnowflakeInputType.DOCUMENT]:
+    kit = EmbedKit.snowflake(
+        model=Model.Snowflake.ARCTIC_EMBED_M_V1_5,
+        text_batch_size=32,
+        text_input_type=input_type,
+    )
+    test_provider(kit, expected_dim=1, supports_images=False)

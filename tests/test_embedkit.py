@@ -6,6 +6,7 @@ from pathlib import Path
 from embedkit import EmbedKit
 from embedkit.models import Model
 from embedkit.providers.cohere import CohereInputType
+from embedkit.providers.snowflake import SnowflakeInputType
 
 
 # Fixture for sample image
@@ -56,6 +57,25 @@ def jina_kit():
     return EmbedKit.jina(
         model=Model.Jina.CLIP_V2,
         api_key=os.getenv("JINAAI_API_KEY"),
+    )
+
+
+# Snowflake fixtures
+@pytest.fixture
+def snowflake_kit_query():
+    """Fixture for Snowflake kit with query input type."""
+    return EmbedKit.snowflake(
+        model=Model.Snowflake.ARCTIC_EMBED_M_V1_5,
+        text_input_type=SnowflakeInputType.QUERY,
+    )
+
+
+@pytest.fixture
+def snowflake_kit_document():
+    """Fixture for Snowflake kit with document input type."""
+    return EmbedKit.snowflake(
+        model=Model.Snowflake.ARCTIC_EMBED_M_V1_5,
+        text_input_type=SnowflakeInputType.DOCUMENT,
     )
 
 
@@ -221,4 +241,49 @@ def test_jina_missing_api_key():
         EmbedKit.jina(
             model=Model.Jina.CLIP_V2,
             api_key=None,
+        )
+
+
+# ===============================
+# Snowflake tests
+# ===============================
+@pytest.mark.snowflake
+@pytest.mark.parametrize(
+    "snowflake_kit_fixture", ["snowflake_kit_query", "snowflake_kit_document"]
+)
+def test_snowflake_text_embedding(request, snowflake_kit_fixture):
+    """Test text embedding with Snowflake models."""
+    kit = request.getfixturevalue(snowflake_kit_fixture)
+    result = kit.embed_text("Hello world")
+
+    assert len(result.objects) == 1
+    assert len(result.objects[0].embedding.shape) == 1
+    assert result.objects[0].source_b64 is None
+    assert result.model_provider == "Snowflake"
+    assert result.input_type in ["query", None]
+
+
+@pytest.mark.snowflake
+def test_snowflake_image_embedding(snowflake_kit_query):
+    """Test that image embedding raises appropriate error."""
+    with pytest.raises(Exception) as exc_info:
+        snowflake_kit_query.embed_image("dummy_path")
+    assert "does not support image embeddings" in str(exc_info.value)
+
+
+@pytest.mark.snowflake
+def test_snowflake_pdf_embedding(snowflake_kit_query):
+    """Test that PDF embedding raises appropriate error."""
+    with pytest.raises(Exception) as exc_info:
+        snowflake_kit_query.embed_pdf("dummy_path")
+    assert "does not support image embeddings" in str(exc_info.value)
+
+
+@pytest.mark.snowflake
+def test_snowflake_invalid_model():
+    """Test that invalid model raises appropriate error."""
+    with pytest.raises(ValueError):
+        EmbedKit.snowflake(
+            model="invalid_model",
+            text_input_type=SnowflakeInputType.QUERY,
         )

@@ -1,15 +1,23 @@
 """Snowflake Arctic Embed provider."""
 
 from typing import Union, List
+from pathlib import Path
 import numpy as np
+from enum import Enum
 import logging
 from sentence_transformers import SentenceTransformer
-from pathlib import Path
 
 from ..models import Model
 from ..base import EmbeddingProvider, EmbeddingError, EmbeddingResponse
 
 logger = logging.getLogger(__name__)
+
+
+class SnowflakeInputType(Enum):
+    """Enum for Snowflake input types."""
+
+    QUERY = "query"
+    DOCUMENT = None
 
 
 class SnowflakeProvider(EmbeddingProvider):
@@ -21,6 +29,7 @@ class SnowflakeProvider(EmbeddingProvider):
         text_batch_size: int,
         image_batch_size: int,
         device: str = None,
+        text_input_type: SnowflakeInputType = SnowflakeInputType.QUERY,
     ):
         super().__init__(
             model_name=model.value,
@@ -30,6 +39,7 @@ class SnowflakeProvider(EmbeddingProvider):
         )
         self._device = device
         self._model = None
+        self.input_type = text_input_type
 
     def _load_model(self):
         """Lazy load the model."""
@@ -46,8 +56,17 @@ class SnowflakeProvider(EmbeddingProvider):
             except Exception as e:
                 raise EmbeddingError(f"Failed to load model: {e}") from e
 
-    def embed_text(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
-        """Generate text embeddings using the Snowflake Arctic Embed model."""
+    def embed_text(
+        self,
+        texts: Union[str, List[str]],
+        **kwargs
+    ) -> EmbeddingResponse:
+        """Generate text embeddings using the Snowflake Arctic Embed model.
+
+        Args:
+            texts: Input text or list of texts to embed
+            **kwargs: Additional arguments passed to the model's encode method
+        """
         self._load_model()
         texts = self._normalize_text_input(texts)
 
@@ -57,17 +76,16 @@ class SnowflakeProvider(EmbeddingProvider):
             # Process texts in batches
             for i in range(0, len(texts), self.text_batch_size):
                 batch_texts = texts[i : i + self.text_batch_size]
-                # Use query prompt for all inputs since we don't distinguish between queries and documents
                 batch_embeddings = self._model.encode(
                     batch_texts,
-                    prompt_name="query",
+                    prompt_name=self.input_type.value,
                     convert_to_numpy=True,
                 )
                 all_embeddings.append(batch_embeddings)
 
             # Concatenate all batch embeddings
             final_embeddings = np.concatenate(all_embeddings, axis=0)
-            return self._create_text_response(final_embeddings)
+            return self._create_text_response(final_embeddings, self.input_type.value)
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed text: {e}") from e
