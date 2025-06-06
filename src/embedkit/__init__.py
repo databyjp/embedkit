@@ -9,8 +9,6 @@ from pathlib import Path
 from .models import Model
 from .base import EmbeddingError, EmbeddingResponse
 from .providers import ColPaliProvider, CohereProvider, JinaProvider, SnowflakeProvider
-from .providers.cohere import CohereInputType
-from .providers.snowflake import SnowflakeInputType
 
 
 class EmbedKit:
@@ -62,7 +60,6 @@ class EmbedKit:
         model: Model = Model.Cohere.EMBED_V4_0,
         text_batch_size: int = 32,
         image_batch_size: int = 8,
-        text_input_type: CohereInputType = CohereInputType.SEARCH_DOCUMENT,
     ):
         """
         Create EmbedKit instance with Cohere provider.
@@ -72,7 +69,6 @@ class EmbedKit:
             model: Cohere model enum
             text_batch_size: Batch size for text embedding generation
             image_batch_size: Batch size for image embedding generation
-            input_type: Type of input for embedding (search_document or search_query)
         """
         if not api_key:
             raise ValueError("API key is required")
@@ -85,7 +81,6 @@ class EmbedKit:
             model=model,
             text_batch_size=text_batch_size,
             image_batch_size=image_batch_size,
-            text_input_type=text_input_type,
         )
         return cls(provider)
 
@@ -127,7 +122,6 @@ class EmbedKit:
         text_batch_size: int = 32,
         image_batch_size: int = 8,
         device: Optional[str] = None,
-        text_input_type: SnowflakeInputType = SnowflakeInputType.QUERY,
     ):
         """
         Create EmbedKit instance with Snowflake provider.
@@ -137,7 +131,6 @@ class EmbedKit:
             text_batch_size: Batch size for text embedding generation
             image_batch_size: Batch size for image embedding generation (not used)
             device: Device to run on ('cuda', 'mps', 'cpu', or None for auto-detect)
-            text_input_type: Type of input for embedding (query or document)
         """
         if not isinstance(model, Model.Snowflake):
             raise ValueError(f"Unsupported model: {model}")
@@ -147,7 +140,6 @@ class EmbedKit:
             text_batch_size=text_batch_size,
             image_batch_size=image_batch_size,
             device=device,
-            text_input_type=text_input_type,
         )
         return cls(provider)
 
@@ -167,6 +159,10 @@ class EmbedKit:
     def embed_document(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
         """Generate document text embeddings using the configured provider.
 
+        This is the primary method for generating embeddings for documents or longer text.
+        For providers that differentiate between query and document embeddings (Cohere and Snowflake),
+        this will use the document-specific embedding model.
+
         Args:
             texts: Text or list of texts to embed
             **kwargs: Additional provider-specific arguments
@@ -178,6 +174,10 @@ class EmbedKit:
 
     def embed_query(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
         """Generate query text embeddings using the configured provider.
+
+        For providers that differentiate between query and document embeddings (Cohere and Snowflake),
+        this will use the query-specific embedding model. For other providers (ColPali and Jina),
+        this aliases to embed_document.
 
         Args:
             texts: Text or list of texts to embed
@@ -195,7 +195,7 @@ class EmbedKit:
         return self._provider.embed_image(images)
 
     def embed_pdf(self, pdf: Union[Path, str]) -> EmbeddingResponse:
-        """Generate image embeddings from PDFsusing the configured provider. Takes a single PDF file."""
+        """Generate image embeddings from PDFs using the configured provider. Takes a single PDF file."""
         return self._provider.embed_pdf(pdf)
 
     @property

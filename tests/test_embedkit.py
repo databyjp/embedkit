@@ -5,8 +5,6 @@ import numpy as np
 from pathlib import Path
 from embedkit import EmbedKit
 from embedkit.models import Model
-from embedkit.providers.cohere import CohereInputType
-from embedkit.providers.snowflake import SnowflakeInputType
 
 
 # Fixture for sample image
@@ -31,22 +29,11 @@ def sample_pdf_path():
 
 # Cohere fixtures
 @pytest.fixture
-def cohere_kit_search_query():
-    """Fixture for Cohere kit with search query input type."""
+def cohere_kit():
+    """Fixture for Cohere kit."""
     return EmbedKit.cohere(
         model=Model.Cohere.EMBED_V4_0,
         api_key=os.getenv("COHERE_API_KEY"),
-        text_input_type=CohereInputType.SEARCH_QUERY,
-    )
-
-
-@pytest.fixture
-def cohere_kit_search_document():
-    """Fixture for Cohere kit with search document input type."""
-    return EmbedKit.cohere(
-        model=Model.Cohere.EMBED_V4_0,
-        api_key=os.getenv("COHERE_API_KEY"),
-        text_input_type=CohereInputType.SEARCH_DOCUMENT,
     )
 
 
@@ -62,20 +49,10 @@ def jina_kit():
 
 # Snowflake fixtures
 @pytest.fixture
-def snowflake_kit_query():
-    """Fixture for Snowflake kit with query input type."""
+def snowflake_kit():
+    """Fixture for Snowflake kit."""
     return EmbedKit.snowflake(
         model=Model.Snowflake.ARCTIC_EMBED_M_V1_5,
-        text_input_type=SnowflakeInputType.QUERY,
-    )
-
-
-@pytest.fixture
-def snowflake_kit_document():
-    """Fixture for Snowflake kit with document input type."""
-    return EmbedKit.snowflake(
-        model=Model.Snowflake.ARCTIC_EMBED_M_V1_5,
-        text_input_type=SnowflakeInputType.DOCUMENT,
     )
 
 
@@ -83,19 +60,27 @@ def snowflake_kit_document():
 # Cohere tests
 # ===============================
 @pytest.mark.cohere
-@pytest.mark.parametrize(
-    "cohere_kit_fixture", ["cohere_kit_search_query", "cohere_kit_search_document"]
-)
-def test_cohere_text_embedding(request, cohere_kit_fixture):
-    """Test text embedding with Cohere models."""
-    kit = request.getfixturevalue(cohere_kit_fixture)
-    result = kit.embed_document("Hello world")
+def test_cohere_document_embedding(cohere_kit):
+    """Test document embedding with Cohere models."""
+    result = cohere_kit.embed_document("Hello world")
 
     assert len(result.objects) == 1
     assert len(result.objects[0].embedding.shape) == 1
     assert result.objects[0].source_b64 is None
     assert result.model_provider == "Cohere"
-    assert result.input_type in ["search_query", "search_document"]
+    assert result.input_type == "search_document"
+
+
+@pytest.mark.cohere
+def test_cohere_query_embedding(cohere_kit):
+    """Test query embedding with Cohere models."""
+    result = cohere_kit.embed_query("Hello world")
+
+    assert len(result.objects) == 1
+    assert len(result.objects[0].embedding.shape) == 1
+    assert result.objects[0].source_b64 is None
+    assert result.model_provider == "Cohere"
+    assert result.input_type == "search_query"
 
 
 @pytest.mark.cohere
@@ -106,12 +91,10 @@ def test_cohere_text_embedding(request, cohere_kit_fixture):
         ("embed_pdf", "sample_pdf_path"),
     ],
 )
-def test_cohere_search_document_file_embedding(
-    request, embed_method, file_fixture, cohere_kit_search_document
-):
-    """Test file embedding with Cohere search document model."""
+def test_cohere_file_embedding(request, embed_method, file_fixture, cohere_kit):
+    """Test file embedding with Cohere model."""
     file_path = request.getfixturevalue(file_fixture)
-    embed_func = getattr(cohere_kit_search_document, embed_method)
+    embed_func = getattr(cohere_kit, embed_method)
     result = embed_func(file_path)
 
     assert len(result.objects) == 1
@@ -139,21 +122,16 @@ def test_cohere_missing_api_key():
         EmbedKit.cohere(
             model=Model.Cohere.EMBED_V4_0,
             api_key=None,
-            text_input_type=CohereInputType.SEARCH_QUERY,
         )
 
 
 @pytest.mark.cohere
-def test_cohere_query_vs_document():
+def test_cohere_query_vs_document(cohere_kit):
     """Test that query and document embeddings are different for Cohere."""
-    kit = EmbedKit.cohere(
-        model=Model.Cohere.EMBED_V4_0,
-        api_key=os.getenv("COHERE_API_KEY"),
-    )
     text = "Hello world"
 
-    query_result = kit.embed_query(text)
-    doc_result = kit.embed_document(text)
+    query_result = cohere_kit.embed_query(text)
+    doc_result = cohere_kit.embed_document(text)
 
     # Verify different input types
     assert query_result.input_type == "search_query"
@@ -167,10 +145,23 @@ def test_cohere_query_vs_document():
 # ColPali tests
 # ===============================
 @pytest.mark.colpali
-def test_colpali_text_embedding():
-    """Test text embedding with Colpali model."""
+def test_colpali_document_embedding():
+    """Test document embedding with Colpali model."""
     kit = EmbedKit.colpali(model=Model.ColPali.COLPALI_V1_3)
     result = kit.embed_document("Hello world")
+
+    assert len(result.objects) == 1
+    assert len(result.objects[0].embedding.shape) == 2
+    assert result.objects[0].source_b64 is None
+    assert result.model_provider == "ColPali"
+    assert result.input_type == "text"
+
+
+@pytest.mark.colpali
+def test_colpali_query_embedding():
+    """Test query embedding with Colpali model."""
+    kit = EmbedKit.colpali(model=Model.ColPali.COLPALI_V1_3)
+    result = kit.embed_query("Hello world")
 
     assert len(result.objects) == 1
     assert len(result.objects[0].embedding.shape) == 2
@@ -229,9 +220,21 @@ def test_colpali_query_aliases_document():
 # Jina tests
 # ===============================
 @pytest.mark.jina
-def test_jina_text_embedding(jina_kit):
-    """Test text embedding with Jina model."""
+def test_jina_document_embedding(jina_kit):
+    """Test document embedding with Jina model."""
     result = jina_kit.embed_document("Hello world")
+
+    assert len(result.objects) == 1
+    assert len(result.objects[0].embedding.shape) == 1
+    assert result.objects[0].source_b64 is None
+    assert result.model_provider == "Jina"
+    assert result.input_type == "text"
+
+
+@pytest.mark.jina
+def test_jina_query_embedding(jina_kit):
+    """Test query embedding with Jina model."""
+    result = jina_kit.embed_query("Hello world")
 
     assert len(result.objects) == 1
     assert len(result.objects[0].embedding.shape) == 1
@@ -302,42 +305,57 @@ def test_jina_query_aliases_document(jina_kit):
 # ===============================
 @pytest.mark.snowflake
 @pytest.mark.parametrize(
-    "model,input_type",
+    "model",
     [
-        (Model.Snowflake.ARCTIC_EMBED_M_V1_5, SnowflakeInputType.QUERY),
-        (Model.Snowflake.ARCTIC_EMBED_M_V1_5, SnowflakeInputType.DOCUMENT),
-        (Model.Snowflake.ARCTIC_EMBED_L_V2_0, SnowflakeInputType.QUERY),
-        (Model.Snowflake.ARCTIC_EMBED_L_V2_0, SnowflakeInputType.DOCUMENT),
+        Model.Snowflake.ARCTIC_EMBED_M_V1_5,
+        Model.Snowflake.ARCTIC_EMBED_L_V2_0,
     ],
 )
-def test_snowflake_text_embedding(request, model, input_type):
-    """Test text embedding with Snowflake models."""
-    kit = EmbedKit.snowflake(
-        model=model,
-        text_input_type=input_type,
-    )
+def test_snowflake_document_embedding(model):
+    """Test document embedding with Snowflake models."""
+    kit = EmbedKit.snowflake(model=model)
     result = kit.embed_document("Hello world")
 
     assert len(result.objects) == 1
     assert len(result.objects[0].embedding.shape) == 1
     assert result.objects[0].source_b64 is None
     assert result.model_provider == "Snowflake"
-    assert result.input_type in ["query", None]
+    assert result.input_type is None
 
 
 @pytest.mark.snowflake
-def test_snowflake_image_embedding(snowflake_kit_query):
+@pytest.mark.parametrize(
+    "model",
+    [
+        Model.Snowflake.ARCTIC_EMBED_M_V1_5,
+        Model.Snowflake.ARCTIC_EMBED_L_V2_0,
+    ],
+)
+def test_snowflake_query_embedding(model):
+    """Test query embedding with Snowflake models."""
+    kit = EmbedKit.snowflake(model=model)
+    result = kit.embed_query("Hello world")
+
+    assert len(result.objects) == 1
+    assert len(result.objects[0].embedding.shape) == 1
+    assert result.objects[0].source_b64 is None
+    assert result.model_provider == "Snowflake"
+    assert result.input_type == "query"
+
+
+@pytest.mark.snowflake
+def test_snowflake_image_embedding(snowflake_kit):
     """Test that image embedding raises appropriate error."""
     with pytest.raises(Exception) as exc_info:
-        snowflake_kit_query.embed_image("dummy_path")
+        snowflake_kit.embed_image("dummy_path")
     assert "does not support image embeddings" in str(exc_info.value)
 
 
 @pytest.mark.snowflake
-def test_snowflake_pdf_embedding(snowflake_kit_query):
+def test_snowflake_pdf_embedding(snowflake_kit):
     """Test that PDF embedding raises appropriate error."""
     with pytest.raises(Exception) as exc_info:
-        snowflake_kit_query.embed_pdf("dummy_path")
+        snowflake_kit.embed_pdf("dummy_path")
     assert "does not support image embeddings" in str(exc_info.value)
 
 
@@ -345,22 +363,16 @@ def test_snowflake_pdf_embedding(snowflake_kit_query):
 def test_snowflake_invalid_model():
     """Test that invalid model raises appropriate error."""
     with pytest.raises(ValueError):
-        EmbedKit.snowflake(
-            model="invalid_model",
-            text_input_type=SnowflakeInputType.QUERY,
-        )
+        EmbedKit.snowflake(model="invalid_model")
 
 
 @pytest.mark.snowflake
-def test_snowflake_query_vs_document():
+def test_snowflake_query_vs_document(snowflake_kit):
     """Test that query and document embeddings are different for Snowflake."""
-    kit = EmbedKit.snowflake(
-        model=Model.Snowflake.ARCTIC_EMBED_M_V1_5,
-    )
     text = "Hello world"
 
-    query_result = kit.embed_query(text)
-    doc_result = kit.embed_document(text)
+    query_result = snowflake_kit.embed_query(text)
+    doc_result = snowflake_kit.embed_document(text)
 
     # Verify different input types
     assert query_result.input_type == "query"

@@ -1,6 +1,6 @@
 # ./main.py
 from embedkit import EmbedKit
-from embedkit.classes import Model, CohereInputType, SnowflakeInputType
+from embedkit.classes import Model
 from pathlib import Path
 import os
 import numpy as np
@@ -42,7 +42,7 @@ def test_provider(kit: EmbedKit, expected_dim: int, supports_images: bool = True
     """Test a provider with various inputs."""
     print(f"\nTesting {kit.provider_info}...")
 
-    # Test text embedding
+    # Test document embedding
     test_texts = [
         "Hello world",
         "This is a longer text that should generate a different embedding",
@@ -51,7 +51,18 @@ def test_provider(kit: EmbedKit, expected_dim: int, supports_images: bool = True
     results = kit.embed_document(test_texts)
     assert len(results.objects) == len(test_texts)
 
-    print("Text Embedding Results:")
+    print("Document Embedding Results:")
+    for i, (text, obj) in enumerate(zip(test_texts, results.objects)):
+        print(f"\nText {i+1}: {text}")
+        print_embedding_stats(obj.embedding, prefix="  ")
+        assert len(obj.embedding.shape) == expected_dim
+        assert obj.source_b64 is None
+
+    # Test query embedding
+    results = kit.embed_query(test_texts)
+    assert len(results.objects) == len(test_texts)
+
+    print("Query Embedding Results:")
     for i, (text, obj) in enumerate(zip(test_texts, results.objects)):
         print(f"\nText {i+1}: {text}")
         print_embedding_stats(obj.embedding, prefix="  ")
@@ -107,15 +118,13 @@ longer_pdf = Path("tests/fixtures/2407.01449v6_p1_p5.pdf")
 
 # Test Cohere provider
 print("\n=== Testing Cohere provider ===")
-for input_type in [CohereInputType.SEARCH_QUERY, CohereInputType.SEARCH_DOCUMENT]:
-    kit = EmbedKit.cohere(
-        model=Model.Cohere.EMBED_V4_0,
-        api_key=os.getenv("COHERE_API_KEY"),
-        text_batch_size=64,
-        image_batch_size=8,
-        text_input_type=input_type,
-    )
-    test_provider(kit, expected_dim=1)
+kit = EmbedKit.cohere(
+    model=Model.Cohere.EMBED_V4_0,
+    api_key=os.getenv("COHERE_API_KEY"),
+    text_batch_size=64,
+    image_batch_size=8,
+)
+test_provider(kit, expected_dim=1)
 
 # Test ColPali provider
 print("\n=== Testing ColPali provider ===")
@@ -145,10 +154,8 @@ test_provider(kit, expected_dim=1)
 print("\n=== Testing Snowflake provider ===")
 for model in [Model.Snowflake.ARCTIC_EMBED_M_V1_5, Model.Snowflake.ARCTIC_EMBED_L_V2_0]:
     print(f"\nTesting {model.value}...")
-    for input_type in [SnowflakeInputType.QUERY, SnowflakeInputType.DOCUMENT]:
-        kit = EmbedKit.snowflake(
-            model=model,
-            text_batch_size=32,
-            text_input_type=input_type,
-        )
-        test_provider(kit, expected_dim=1, supports_images=False)
+    kit = EmbedKit.snowflake(
+        model=model,
+        text_batch_size=32,
+    )
+    test_provider(kit, expected_dim=1, supports_images=False)
