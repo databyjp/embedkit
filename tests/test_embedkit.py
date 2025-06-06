@@ -56,6 +56,15 @@ def snowflake_kit():
     )
 
 
+# Qwen fixtures
+@pytest.fixture
+def qwen_kit():
+    """Fixture for Qwen kit."""
+    return EmbedKit.qwen(
+        model=Model.Qwen.QWEN3_EMBEDDING_0_6B,
+    )
+
+
 # ===============================
 # Cohere tests
 # ===============================
@@ -382,6 +391,75 @@ def test_snowflake_query_vs_document(snowflake_kit):
 
     query_result = snowflake_kit.embed_query(text)
     doc_result = snowflake_kit.embed_document(text)
+
+    # Verify input types
+    assert query_result.input_type == "query"
+    assert doc_result.input_type is None
+
+    # Verify embeddings are produced
+    assert len(query_result.objects) == 1
+    assert len(doc_result.objects) == 1
+    assert query_result.objects[0].embedding.shape == doc_result.objects[0].embedding.shape
+    assert query_result.objects[0].embedding.dtype == doc_result.objects[0].embedding.dtype
+
+
+# ===============================
+# Qwen tests
+# ===============================
+@pytest.mark.qwen
+def test_qwen_document_embedding(qwen_kit):
+    """Test document embedding with Qwen model."""
+    result = qwen_kit.embed_document("Hello world")
+
+    assert len(result.objects) == 1
+    assert len(result.objects[0].embedding.shape) == 1
+    assert result.objects[0].source_b64 is None
+    assert result.model_provider == "Qwen"
+    assert result.input_type is None
+
+
+@pytest.mark.qwen
+def test_qwen_query_embedding(qwen_kit):
+    """Test query embedding with Qwen model."""
+    result = qwen_kit.embed_query("Hello world")
+
+    assert len(result.objects) == 1
+    assert len(result.objects[0].embedding.shape) == 1
+    assert result.objects[0].source_b64 is None
+    assert result.model_provider == "Qwen"
+    assert result.input_type == "query"
+
+
+@pytest.mark.qwen
+def test_qwen_image_embedding(qwen_kit):
+    """Test that image embedding raises appropriate error."""
+    with pytest.raises(Exception) as exc_info:
+        qwen_kit.embed_image("dummy_path")
+    assert "does not support image embeddings" in str(exc_info.value)
+
+
+@pytest.mark.qwen
+def test_qwen_pdf_embedding(qwen_kit):
+    """Test that PDF embedding raises appropriate error."""
+    with pytest.raises(Exception) as exc_info:
+        qwen_kit.embed_pdf("dummy_path")
+    assert "does not support image embeddings" in str(exc_info.value)
+
+
+@pytest.mark.qwen
+def test_qwen_invalid_model():
+    """Test that invalid model raises appropriate error."""
+    with pytest.raises(ValueError):
+        EmbedKit.qwen(model="invalid_model")
+
+
+@pytest.mark.qwen
+def test_qwen_query_vs_document(qwen_kit):
+    """Test that both query and document embeddings are produced for Qwen."""
+    text = "Hello world"
+
+    query_result = qwen_kit.embed_query(text)
+    doc_result = qwen_kit.embed_document(text)
 
     # Verify input types
     assert query_result.input_type == "query"

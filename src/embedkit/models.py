@@ -23,3 +23,6 @@ class Model:
     class Snowflake(Enum):
         ARCTIC_EMBED_M_V1_5 = "Snowflake/snowflake-arctic-embed-m-v1.5"
         ARCTIC_EMBED_L_V2_0 = "Snowflake/snowflake-arctic-embed-l-v2.0"
+
+    class Qwen(Enum):
+        QWEN3_EMBEDDING_0_6B = "Qwen/Qwen3-Embedding-0.6B"

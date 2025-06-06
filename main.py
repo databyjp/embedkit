@@ -159,3 +159,11 @@ for model in [Model.Snowflake.ARCTIC_EMBED_M_V1_5, Model.Snowflake.ARCTIC_EMBED_
         text_batch_size=32,
     )
     test_provider(kit, expected_dim=1, supports_images=False)
+
+# Test Qwen provider
+print("\n=== Testing Qwen provider ===")
+kit = EmbedKit.qwen(
+    model=Model.Qwen.QWEN3_EMBEDDING_0_6B,
+    text_batch_size=32,
+)
+test_provider(kit, expected_dim=1, supports_images=False)

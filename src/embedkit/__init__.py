@@ -8,7 +8,7 @@ from pathlib import Path
 
 from .models import Model
 from .base import EmbeddingError, EmbeddingResponse
-from .providers import ColPaliProvider, CohereProvider, JinaProvider, SnowflakeProvider
+from .providers import ColPaliProvider, CohereProvider, JinaProvider, SnowflakeProvider, QwenProvider
 
 
 class EmbedKit:
@@ -136,6 +136,34 @@ class EmbedKit:
             raise ValueError(f"Unsupported model: {model}")
 
         provider = SnowflakeProvider(
+            model=model,
+            text_batch_size=text_batch_size,
+            image_batch_size=image_batch_size,
+            device=device,
+        )
+        return cls(provider)
+
+    @classmethod
+    def qwen(
+        cls,
+        model: Model = Model.Qwen.QWEN3_EMBEDDING_0_6B,
+        text_batch_size: int = 32,
+        image_batch_size: int = 8,
+        device: Optional[str] = None,
+    ):
+        """
+        Create EmbedKit instance with Qwen provider.
+
+        Args:
+            model: Qwen model enum
+            text_batch_size: Batch size for text embedding generation
+            image_batch_size: Batch size for image embedding generation (not used)
+            device: Device to run on ('cuda', 'mps', 'cpu', or None for auto-detect)
+        """
+        if not isinstance(model, Model.Qwen):
+            raise ValueError(f"Unsupported model: {model}")
+
+        provider = QwenProvider(
             model=model,
             text_batch_size=text_batch_size,
             image_batch_size=image_batch_size,
