@@ -55,7 +55,7 @@ class JinaProvider(EmbeddingProvider):
         except (KeyError, ValueError) as e:
             raise EmbeddingError(f"Failed to parse Jina API response: {e}") from e
 
-    def embed_text(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
+    def embed_document(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
         """Generate text embeddings using the Jina API."""
         texts = self._normalize_text_input(texts)
 

@@ -29,7 +29,6 @@ class SnowflakeProvider(EmbeddingProvider):
         text_batch_size: int,
         image_batch_size: int,
         device: str = None,
-        text_input_type: SnowflakeInputType = SnowflakeInputType.QUERY,
     ):
         super().__init__(
             model_name=model.value,
@@ -39,7 +38,6 @@ class SnowflakeProvider(EmbeddingProvider):
         )
         self._device = device
         self._model = None
-        self.input_type = text_input_type
         self._supports_image_embeddings = False  # Arctic models do not support image embeddings
 
     def _load_model(self):
@@ -57,17 +55,12 @@ class SnowflakeProvider(EmbeddingProvider):
             except Exception as e:
                 raise EmbeddingError(f"Failed to load model: {e}") from e
 
-    def embed_text(
+    def embed_query(
         self,
         texts: Union[str, List[str]],
         **kwargs
     ) -> EmbeddingResponse:
-        """Generate text embeddings using the Snowflake Arctic Embed model.
-
-        Args:
-            texts: Input text or list of texts to embed
-            **kwargs: Additional arguments passed to the model's encode method
-        """
+        """Generate query text embeddings using the Snowflake Arctic Embed model."""
         self._load_model()
         texts = self._normalize_text_input(texts)
 
@@ -79,14 +72,43 @@ class SnowflakeProvider(EmbeddingProvider):
                 batch_texts = texts[i : i + self.text_batch_size]
                 batch_embeddings = self._model.encode(
                     batch_texts,
-                    prompt_name=self.input_type.value,
+                    prompt_name=SnowflakeInputType.QUERY.value,
                     convert_to_numpy=True,
                 )
                 all_embeddings.append(batch_embeddings)
 
             # Concatenate all batch embeddings
             final_embeddings = np.concatenate(all_embeddings, axis=0)
-            return self._create_text_response(final_embeddings, self.input_type.value)
+            return self._create_text_response(final_embeddings, SnowflakeInputType.QUERY.value)
+
+        except Exception as e:
+            raise EmbeddingError(f"Failed to embed text: {e}") from e
+
+    def embed_document(
+        self,
+        texts: Union[str, List[str]],
+        **kwargs
+    ) -> EmbeddingResponse:
+        """Generate document text embeddings using the Snowflake Arctic Embed model."""
+        self._load_model()
+        texts = self._normalize_text_input(texts)
+
+        try:
+            all_embeddings = []
+
+            # Process texts in batches
+            for i in range(0, len(texts), self.text_batch_size):
+                batch_texts = texts[i : i + self.text_batch_size]
+                batch_embeddings = self._model.encode(
+                    batch_texts,
+                    prompt_name=SnowflakeInputType.DOCUMENT.value,
+                    convert_to_numpy=True,
+                )
+                all_embeddings.append(batch_embeddings)
+
+            # Concatenate all batch embeddings
+            final_embeddings = np.concatenate(all_embeddings, axis=0)
+            return self._create_text_response(final_embeddings, SnowflakeInputType.DOCUMENT.value)
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed text: {e}") from e

@@ -86,7 +86,7 @@ class ColPaliProvider(EmbeddingProvider):
             except Exception as e:
                 raise EmbeddingError(f"Failed to load model: {e}") from e
 
-    def embed_text(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
+    def embed_document(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
         """Generate embeddings for text inputs."""
         self._load_model()
         texts = self._normalize_text_input(texts)

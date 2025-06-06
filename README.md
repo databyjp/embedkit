@@ -18,11 +18,14 @@ from embedkit.classes import Model, CohereInputType, SnowflakeInputType
 kit = EmbedKit.cohere(
     model=Model.Cohere.EMBED_V4_0,
     api_key="your-api-key",
-    text_input_type=CohereInputType.SEARCH_QUERY,
 )
 
-# Get text embeddings
-result = kit.embed_text("Hello world")
+# Get document embeddings
+result = kit.embed_document("Hello world")
+print(result.objects[0].embedding.shape)  # 1D array
+
+# Get query embeddings (for providers that support it)
+result = kit.embed_query("Hello world")
 print(result.objects[0].embedding.shape)  # 1D array
 
 # Get image embeddings
@@ -38,16 +41,22 @@ print(result.objects[0].source_b64)  # Base64 encoded image
 kit = EmbedKit.cohere(
     model=Model.Cohere.EMBED_V4_0,  # or EMBED_ENGLISH_V3_0, EMBED_MULTILINGUAL_V3_0, etc.
     api_key="your-api-key",
-    text_input_type=CohereInputType.SEARCH_QUERY,  # or SEARCH_DOCUMENT
 )
+
+# Different embeddings for queries vs documents
+query_result = kit.embed_query("What is the capital of France?")
+doc_result = kit.embed_document("Paris is the capital of France.")
 ```
 
 ### Snowflake
 ```python
 kit = EmbedKit.snowflake(
     model=Model.Snowflake.ARCTIC_EMBED_L_V2_0,  # or ARCTIC_EMBED_M_V1_5
-    text_input_type=SnowflakeInputType.QUERY,  # or DOCUMENT
 )
+
+# Different embeddings for queries vs documents
+query_result = kit.embed_query("What is the capital of France?")
+doc_result = kit.embed_document("Paris is the capital of France.")
 ```
 
 ### ColPali
@@ -55,6 +64,11 @@ kit = EmbedKit.snowflake(
 kit = EmbedKit.colpali(
     model=Model.ColPali.COLPALI_V1_3,  # or COLSMOL_256M, COLSMOL_500M
 )
+
+# Same embeddings for queries and documents
+query_result = kit.embed_query("What is the capital of France?")
+doc_result = kit.embed_document("Paris is the capital of France.")
+assert np.array_equal(query_result.objects[0].embedding, doc_result.objects[0].embedding)
 ```
 
 ### Jina
@@ -63,6 +77,11 @@ kit = EmbedKit.jina(
     model=Model.Jina.CLIP_V2,
     api_key="your-api-key",
 )
+
+# Same embeddings for queries and documents
+query_result = kit.embed_query("What is the capital of France?")
+doc_result = kit.embed_document("Paris is the capital of France.")
+assert np.array_equal(query_result.objects[0].embedding, doc_result.objects[0].embedding)
 ```
 
 ## Response Format
@@ -71,7 +90,7 @@ kit = EmbedKit.jina(
 class EmbeddingResponse:
     model_name: str
     model_provider: str
-    input_type: str
+    input_type: str  # "text", "search_query", "search_document", "query", "image"
     objects: List[EmbeddingObject]
 
 class EmbeddingObject:

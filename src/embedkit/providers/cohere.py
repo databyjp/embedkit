@@ -30,7 +30,6 @@ class CohereProvider(EmbeddingProvider):
         model: Model.Cohere,
         text_batch_size: int,
         image_batch_size: int,
-        text_input_type: CohereInputType = CohereInputType.SEARCH_DOCUMENT,
     ):
         super().__init__(
             model_name=model.value,
@@ -39,7 +38,6 @@ class CohereProvider(EmbeddingProvider):
             provider_name="Cohere",
         )
         self.api_key = api_key
-        self.input_type = text_input_type
         self._client = None
 
     def _get_client(self):
@@ -57,8 +55,8 @@ class CohereProvider(EmbeddingProvider):
                 raise EmbeddingError(f"Failed to initialize Cohere client: {e}") from e
         return self._client
 
-    def embed_text(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
-        """Generate text embeddings using the Cohere API."""
+    def embed_query(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
+        """Generate query text embeddings using the Cohere API."""
         client = self._get_client()
         texts = self._normalize_text_input(texts)
 
@@ -71,12 +69,36 @@ class CohereProvider(EmbeddingProvider):
                 response = client.embed(
                     texts=batch_texts,
                     model=self.model_name,
-                    input_type=self.input_type.value,
+                    input_type=CohereInputType.SEARCH_QUERY.value,
                     embedding_types=["float"],
                 )
                 all_embeddings.extend(np.array(response.embeddings.float_))
 
-            return self._create_text_response(all_embeddings, self.input_type.value)
+            return self._create_text_response(all_embeddings, CohereInputType.SEARCH_QUERY.value)
+
+        except Exception as e:
+            raise EmbeddingError(f"Failed to embed text with Cohere: {e}") from e
+
+    def embed_document(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
+        """Generate document text embeddings using the Cohere API."""
+        client = self._get_client()
+        texts = self._normalize_text_input(texts)
+
+        try:
+            all_embeddings = []
+
+            # Process texts in batches
+            for i in range(0, len(texts), self.text_batch_size):
+                batch_texts = texts[i : i + self.text_batch_size]
+                response = client.embed(
+                    texts=batch_texts,
+                    model=self.model_name,
+                    input_type=CohereInputType.SEARCH_DOCUMENT.value,
+                    embedding_types=["float"],
+                )
+                all_embeddings.extend(np.array(response.embeddings.float_))
+
+            return self._create_text_response(all_embeddings, CohereInputType.SEARCH_DOCUMENT.value)
 
         except Exception as e:
             raise EmbeddingError(f"Failed to embed text with Cohere: {e}") from e

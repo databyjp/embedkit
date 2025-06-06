@@ -164,7 +164,7 @@ class EmbedKit:
     #     provider = HuggingFaceProvider(model_name=model_name, device=device)
     #     return cls(provider)
 
-    def embed_text(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
+    def embed_document(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
         """Generate document text embeddings using the configured provider.
 
         Args:
@@ -174,7 +174,19 @@ class EmbedKit:
         Returns:
             EmbeddingResult containing the embeddings
         """
-        return self._provider.embed_text(texts, **kwargs)
+        return self._provider.embed_document(texts, **kwargs)
+
+    def embed_query(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
+        """Generate query text embeddings using the configured provider.
+
+        Args:
+            texts: Text or list of texts to embed
+            **kwargs: Additional provider-specific arguments
+
+        Returns:
+            EmbeddingResult containing the embeddings
+        """
+        return self._provider.embed_query(texts, **kwargs)
 
     def embed_image(
         self, images: Union[Path, str, List[Union[Path, str]]]

@@ -106,9 +106,18 @@ class EmbeddingProvider(ABC):
         )
 
     @abstractmethod
-    def embed_text(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
+    def embed_document(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
         """Generate document text embeddings using the configured provider."""
         pass
+
+    def embed_query(self, texts: Union[str, List[str]], **kwargs) -> EmbeddingResponse:
+        """Generate query text embeddings using the configured provider.
+
+        By default, this aliases to embed_document for providers that don't differentiate
+        between query and document embeddings. Providers that do differentiate should
+        override this method.
+        """
+        return self.embed_document(texts, **kwargs)
 
     @abstractmethod
     def embed_image(

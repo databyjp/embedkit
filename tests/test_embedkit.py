@@ -89,7 +89,7 @@ def snowflake_kit_document():
 def test_cohere_text_embedding(request, cohere_kit_fixture):
     """Test text embedding with Cohere models."""
     kit = request.getfixturevalue(cohere_kit_fixture)
-    result = kit.embed_text("Hello world")
+    result = kit.embed_document("Hello world")
 
     assert len(result.objects) == 1
     assert len(result.objects[0].embedding.shape) == 1
@@ -143,6 +143,26 @@ def test_cohere_missing_api_key():
         )
 
 
+@pytest.mark.cohere
+def test_cohere_query_vs_document():
+    """Test that query and document embeddings are different for Cohere."""
+    kit = EmbedKit.cohere(
+        model=Model.Cohere.EMBED_V4_0,
+        api_key=os.getenv("COHERE_API_KEY"),
+    )
+    text = "Hello world"
+
+    query_result = kit.embed_query(text)
+    doc_result = kit.embed_document(text)
+
+    # Verify different input types
+    assert query_result.input_type == "search_query"
+    assert doc_result.input_type == "search_document"
+
+    # Verify different embeddings
+    assert not np.array_equal(query_result.objects[0].embedding, doc_result.objects[0].embedding)
+
+
 # ===============================
 # ColPali tests
 # ===============================
@@ -150,7 +170,7 @@ def test_cohere_missing_api_key():
 def test_colpali_text_embedding():
     """Test text embedding with Colpali model."""
     kit = EmbedKit.colpali(model=Model.ColPali.COLPALI_V1_3)
-    result = kit.embed_text("Hello world")
+    result = kit.embed_document("Hello world")
 
     assert len(result.objects) == 1
     assert len(result.objects[0].embedding.shape) == 2
@@ -188,13 +208,30 @@ def test_colpali_invalid_model():
         EmbedKit.colpali(model="invalid_model")
 
 
+@pytest.mark.colpali
+def test_colpali_query_aliases_document():
+    """Test that query embeddings alias to document embeddings for ColPali."""
+    kit = EmbedKit.colpali(model=Model.ColPali.COLPALI_V1_3)
+    text = "Hello world"
+
+    query_result = kit.embed_query(text)
+    doc_result = kit.embed_document(text)
+
+    # Verify same input type
+    assert query_result.input_type == "text"
+    assert doc_result.input_type == "text"
+
+    # Verify same embeddings
+    assert np.array_equal(query_result.objects[0].embedding, doc_result.objects[0].embedding)
+
+
 # ===============================
 # Jina tests
 # ===============================
 @pytest.mark.jina
 def test_jina_text_embedding(jina_kit):
     """Test text embedding with Jina model."""
-    result = jina_kit.embed_text("Hello world")
+    result = jina_kit.embed_document("Hello world")
 
     assert len(result.objects) == 1
     assert len(result.objects[0].embedding.shape) == 1
@@ -244,6 +281,22 @@ def test_jina_missing_api_key():
         )
 
 
+@pytest.mark.jina
+def test_jina_query_aliases_document(jina_kit):
+    """Test that query embeddings alias to document embeddings for Jina."""
+    text = "Hello world"
+
+    query_result = jina_kit.embed_query(text)
+    doc_result = jina_kit.embed_document(text)
+
+    # Verify same input type
+    assert query_result.input_type == "text"
+    assert doc_result.input_type == "text"
+
+    # Verify same embeddings
+    assert np.array_equal(query_result.objects[0].embedding, doc_result.objects[0].embedding)
+
+
 # ===============================
 # Snowflake tests
 # ===============================
@@ -263,7 +316,7 @@ def test_snowflake_text_embedding(request, model, input_type):
         model=model,
         text_input_type=input_type,
     )
-    result = kit.embed_text("Hello world")
+    result = kit.embed_document("Hello world")
 
     assert len(result.objects) == 1
     assert len(result.objects[0].embedding.shape) == 1
@@ -296,3 +349,22 @@ def test_snowflake_invalid_model():
             model="invalid_model",
             text_input_type=SnowflakeInputType.QUERY,
         )
+
+
+@pytest.mark.snowflake
+def test_snowflake_query_vs_document():
+    """Test that query and document embeddings are different for Snowflake."""
+    kit = EmbedKit.snowflake(
+        model=Model.Snowflake.ARCTIC_EMBED_M_V1_5,
+    )
+    text = "Hello world"
+
+    query_result = kit.embed_query(text)
+    doc_result = kit.embed_document(text)
+
+    # Verify different input types
+    assert query_result.input_type == "query"
+    assert doc_result.input_type is None
+
+    # Verify different embeddings
+    assert not np.array_equal(query_result.objects[0].embedding, doc_result.objects[0].embedding)

@@ -48,7 +48,7 @@ def test_provider(kit: EmbedKit, expected_dim: int, supports_images: bool = True
         "This is a longer text that should generate a different embedding",
         "The quick brown fox jumps over the lazy dog",
     ]
-    results = kit.embed_text(test_texts)
+    results = kit.embed_document(test_texts)
     assert len(results.objects) == len(test_texts)
 
     print("Text Embedding Results:")
