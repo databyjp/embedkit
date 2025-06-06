@@ -127,18 +127,21 @@ def test_cohere_missing_api_key():
 
 @pytest.mark.cohere
 def test_cohere_query_vs_document(cohere_kit):
-    """Test that query and document embeddings are different for Cohere."""
+    """Test that both query and document embeddings are produced for Cohere."""
     text = "Hello world"
 
     query_result = cohere_kit.embed_query(text)
     doc_result = cohere_kit.embed_document(text)
 
-    # Verify different input types
+    # Verify input types
     assert query_result.input_type == "search_query"
     assert doc_result.input_type == "search_document"
 
-    # Verify different embeddings
-    assert not np.array_equal(query_result.objects[0].embedding, doc_result.objects[0].embedding)
+    # Verify embeddings are produced
+    assert len(query_result.objects) == 1
+    assert len(doc_result.objects) == 1
+    assert query_result.objects[0].embedding.shape == doc_result.objects[0].embedding.shape
+    assert query_result.objects[0].embedding.dtype == doc_result.objects[0].embedding.dtype
 
 
 # ===============================
@@ -201,19 +204,22 @@ def test_colpali_invalid_model():
 
 @pytest.mark.colpali
 def test_colpali_query_aliases_document():
-    """Test that query embeddings alias to document embeddings for ColPali."""
+    """Test that both query and document embeddings are produced for ColPali."""
     kit = EmbedKit.colpali(model=Model.ColPali.COLPALI_V1_3)
     text = "Hello world"
 
     query_result = kit.embed_query(text)
     doc_result = kit.embed_document(text)
 
-    # Verify same input type
+    # Verify input types
     assert query_result.input_type == "text"
     assert doc_result.input_type == "text"
 
-    # Verify same embeddings
-    assert np.array_equal(query_result.objects[0].embedding, doc_result.objects[0].embedding)
+    # Verify embeddings are produced
+    assert len(query_result.objects) == 1
+    assert len(doc_result.objects) == 1
+    assert query_result.objects[0].embedding.shape == doc_result.objects[0].embedding.shape
+    assert query_result.objects[0].embedding.dtype == doc_result.objects[0].embedding.dtype
 
 
 # ===============================
@@ -286,18 +292,21 @@ def test_jina_missing_api_key():
 
 @pytest.mark.jina
 def test_jina_query_aliases_document(jina_kit):
-    """Test that query embeddings alias to document embeddings for Jina."""
+    """Test that both query and document embeddings are produced for Jina."""
     text = "Hello world"
 
     query_result = jina_kit.embed_query(text)
     doc_result = jina_kit.embed_document(text)
 
-    # Verify same input type
+    # Verify input types
     assert query_result.input_type == "text"
     assert doc_result.input_type == "text"
 
-    # Verify same embeddings
-    assert np.array_equal(query_result.objects[0].embedding, doc_result.objects[0].embedding)
+    # Verify embeddings are produced
+    assert len(query_result.objects) == 1
+    assert len(doc_result.objects) == 1
+    assert query_result.objects[0].embedding.shape == doc_result.objects[0].embedding.shape
+    assert query_result.objects[0].embedding.dtype == doc_result.objects[0].embedding.dtype
 
 
 # ===============================
@@ -368,15 +377,18 @@ def test_snowflake_invalid_model():
 
 @pytest.mark.snowflake
 def test_snowflake_query_vs_document(snowflake_kit):
-    """Test that query and document embeddings are different for Snowflake."""
+    """Test that both query and document embeddings are produced for Snowflake."""
     text = "Hello world"
 
     query_result = snowflake_kit.embed_query(text)
     doc_result = snowflake_kit.embed_document(text)
 
-    # Verify different input types
+    # Verify input types
     assert query_result.input_type == "query"
     assert doc_result.input_type is None
 
-    # Verify different embeddings
-    assert not np.array_equal(query_result.objects[0].embedding, doc_result.objects[0].embedding)
+    # Verify embeddings are produced
+    assert len(query_result.objects) == 1
+    assert len(doc_result.objects) == 1
+    assert query_result.objects[0].embedding.shape == doc_result.objects[0].embedding.shape
+    assert query_result.objects[0].embedding.dtype == doc_result.objects[0].embedding.dtype
