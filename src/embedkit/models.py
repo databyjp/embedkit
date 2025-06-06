@@ -26,3 +26,5 @@ class Model:
 
     class Qwen(Enum):
         QWEN3_EMBEDDING_0_6B = "Qwen/Qwen3-Embedding-0.6B"
+        QWEN3_EMBEDDING_4B = "Qwen/Qwen3-Embedding-4B"
+        QWEN3_EMBEDDING_8B = "Qwen/Qwen3-Embedding-8B"

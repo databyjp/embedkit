@@ -407,9 +407,19 @@ def test_snowflake_query_vs_document(snowflake_kit):
 # Qwen tests
 # ===============================
 @pytest.mark.qwen
-def test_qwen_document_embedding(qwen_kit):
-    """Test document embedding with Qwen model."""
-    result = qwen_kit.embed_document("Hello world")
+@pytest.mark.parametrize(
+    "model",
+    [
+        Model.Qwen.QWEN3_EMBEDDING_0_6B,
+        # Comment out for now, as too big to run regularly
+        # Model.Qwen.QWEN3_EMBEDDING_4B,
+        # Model.Qwen.QWEN3_EMBEDDING_8B,
+    ],
+)
+def test_qwen_document_embedding(model):
+    """Test document embedding with Qwen models."""
+    kit = EmbedKit.qwen(model=model)
+    result = kit.embed_document("Hello world")
 
     assert len(result.objects) == 1
     assert len(result.objects[0].embedding.shape) == 1
@@ -419,9 +429,19 @@ def test_qwen_document_embedding(qwen_kit):
 
 
 @pytest.mark.qwen
-def test_qwen_query_embedding(qwen_kit):
-    """Test query embedding with Qwen model."""
-    result = qwen_kit.embed_query("Hello world")
+@pytest.mark.parametrize(
+    "model",
+    [
+        Model.Qwen.QWEN3_EMBEDDING_0_6B,
+        # Comment out for now, as too big to run regularly
+        # Model.Qwen.QWEN3_EMBEDDING_4B,
+        # Model.Qwen.QWEN3_EMBEDDING_8B,
+    ],
+)
+def test_qwen_query_embedding(model):
+    """Test query embedding with Qwen models."""
+    kit = EmbedKit.qwen(model=model)
+    result = kit.embed_query("Hello world")
 
     assert len(result.objects) == 1
     assert len(result.objects[0].embedding.shape) == 1
@@ -454,12 +474,22 @@ def test_qwen_invalid_model():
 
 
 @pytest.mark.qwen
-def test_qwen_query_vs_document(qwen_kit):
+@pytest.mark.parametrize(
+    "model",
+    [
+        Model.Qwen.QWEN3_EMBEDDING_0_6B,
+        # Comment out for now, as too big to run regularly
+        # Model.Qwen.QWEN3_EMBEDDING_4B,
+        # Model.Qwen.QWEN3_EMBEDDING_8B,
+    ],
+)
+def test_qwen_query_vs_document(model):
     """Test that both query and document embeddings are produced for Qwen."""
+    kit = EmbedKit.qwen(model=model)
     text = "Hello world"
 
-    query_result = qwen_kit.embed_query(text)
-    doc_result = qwen_kit.embed_document(text)
+    query_result = kit.embed_query(text)
+    doc_result = kit.embed_document(text)
 
     # Verify input types
     assert query_result.input_type == "query"

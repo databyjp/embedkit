@@ -61,9 +61,18 @@ doc_result = kit.embed_document("Paris is the capital of France.")
 
 ### Qwen
 ```python
+# Lightweight model (0.6B parameters)
 kit = EmbedKit.qwen(
     model=Model.Qwen.QWEN3_EMBEDDING_0_6B,
 )
+
+# Larger models (require more memory)
+# kit = EmbedKit.qwen(
+#     model=Model.Qwen.QWEN3_EMBEDDING_4B,
+# )
+# kit = EmbedKit.qwen(
+#     model=Model.Qwen.QWEN3_EMBEDDING_8B,
+# )
 
 # Different embeddings for queries vs documents
 query_result = kit.embed_query("What is the capital of France?")
